@@ -106,6 +106,22 @@
 
   function newId() { return "e" + state.seq++; }
 
+  // ---- Placement rules ---------------------------------------------------
+  // A course with a single section can't be scheduled twice in the same
+  // semester. We enforce this generally: a given MUS course code may appear at
+  // most once per term. (The mods/transfer bucket is exempt — it isn't a real
+  // semester, so transferred/waived duplicates can coexist there.)
+  function codeAlreadyInTerm(code, term, exceptId) {
+    if (!code) return false;            // only guard real catalog codes
+    if (term === MODS_TERM) return false;
+    return state.entries.some((e) =>
+      e.id !== exceptId && e.term === term && e.code === code);
+  }
+  // Human-friendly term name for messages.
+  function termNameFor(term) {
+    return (typeof termLabel === "function" ? termLabel(term) : term) || "this semester";
+  }
+
   // Classify an upper-division placeholder label into which approved list(s)
   // apply: "history", "theory", "either", or null for non-upper-div blocks.
   function upperDivKind(label) {
@@ -592,7 +608,13 @@
       if (lastZone) {
         lastZone.classList.remove("drag-over");
         const term = lastZone.dataset.term;
-        if (term && term !== entry.term) { entry.term = term; render(); return; }
+        if (term && term !== entry.term) {
+          if (codeAlreadyInTerm(entry.code, term, entry.id)) {
+            alert(`${entry.code} is already in ${termNameFor(term)}. It has only one section, so it can't be scheduled twice in the same semester.`);
+            render(); return;
+          }
+          entry.term = term; render(); return;
+        }
       }
       // dropped outside any term — just re-render to restore appearance
       render();
@@ -845,6 +867,10 @@
     el.pickerBody.querySelectorAll("button[data-code]").forEach((b) => {
       b.addEventListener("click", () => {
         const c = b.dataset.code;
+        if (codeAlreadyInTerm(c, entry.term, entry.id)) {
+          alert(`${c} is already in ${termNameFor(entry.term)}. It has only one section, so it can't appear twice in the same semester.`);
+          return; // keep the picker open
+        }
         entry.code = c;
         entry.label = COURSES[c] ? COURSES[c].title : entry.label;
         entry.cr = COURSES[c] ? COURSES[c].cr : entry.cr;
@@ -922,6 +948,10 @@
       const ge = el.pickerBody.querySelector("#gened-course").value;
       const other = el.pickerBody.querySelector("#add-other").value.trim();
       if (mus && COURSES[mus]) {
+        if (codeAlreadyInTerm(mus, pickerTerm)) {
+          alert(`${mus} is already in ${termNameFor(pickerTerm)}. It has only one section, so it can't be added twice in the same semester.`);
+          return; // keep the picker open so they can pick a different course/term
+        }
         state.entries.push({ id: newId(), code: mus, label: COURSES[mus].title, cr: COURSES[mus].cr, term: pickerTerm });
       } else if (ge && GENED.GENED_COURSES[ge]) {
         const g = GENED.GENED_COURSES[ge];
