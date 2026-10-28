@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Course Rotation Builder — URI Music (Chair Admin)</title>
+  <link rel="stylesheet" href="../styles.css" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body class="admin-body">
+
+  <!-- Passphrase gate (NOT real security — just keeps casual visitors out.
+       Real login comes later via Google. See admin.js GATE_PASSPHRASE.) -->
+  <div id="gate" class="gate">
+    <div class="gate-card">
+      <h1>🎼 Course Rotation Builder</h1>
+      <p class="gate-sub">URI Music — department chair admin. Enter the passphrase to continue.</p>
+      <form id="gate-form">
+        <input id="gate-input" type="password" autocomplete="current-password"
+               placeholder="Passphrase" aria-label="Passphrase" />
+        <button type="submit" class="btn">Enter</button>
+      </form>
+      <p id="gate-error" class="gate-error hidden">That passphrase didn't match. Try again.</p>
+      <p class="gate-note">This is a planning workspace for the chair. It isn't a student page and isn't linked from the planner.</p>
+    </div>
+  </div>
+
+  <div id="admin-app" class="admin-app hidden">
+    <header class="admin-header">
+      <div class="wrap admin-header-wrap">
+        <div>
+          <h1>Course Rotation Builder</h1>
+          <p class="admin-tagline">Drag sections onto URI standard meeting blocks. Conflicts flag automatically.</p>
+        </div>
+        <div class="admin-header-actions">
+          <select id="term-picker" aria-label="Which term you're scheduling"></select>
+          <button id="btn-add-section" type="button" class="btn">+ Add section</button>
+          <button id="btn-export" type="button" class="btn ghost">Export</button>
+          <button id="btn-import" type="button" class="btn ghost">Import</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="wrap admin-main">
+      <p id="admin-source" class="source-status" aria-live="polite">Loading course list…</p>
+
+      <!-- Conflict summary banner -->
+      <section id="conflict-banner" class="conflict-banner hidden" aria-live="polite"></section>
+
+      <div class="admin-grid-wrap">
+        <!-- Unscheduled sections tray -->
+        <aside class="tray" aria-label="Unscheduled sections">
+          <h2>Unscheduled</h2>
+          <p class="tray-hint">Drag a section onto a time block. Sections with no time sit here.</p>
+          <div id="tray-list" class="tray-list"></div>
+        </aside>
+
+        <!-- The standard-block schedule grid -->
+        <section class="sched" aria-label="Weekly schedule grid">
+          <div id="sched-grid" class="sched-grid"></div>
+        </section>
+      </div>
+
+      <!-- Curriculum-change log -->
+      <section class="change-log" aria-labelledby="change-log-title">
+        <h2 id="change-log-title">Curriculum change log</h2>
+        <p class="change-log-intro">Track approved changes and where each one is in the pipeline (department vote → A&amp;S → Faculty Senate → enacted).</p>
+        <form id="change-form" class="change-form">
+          <input id="change-text" type="text" placeholder="What changed? e.g. 'MUS 318G renumbered to MUS 319'" aria-label="Change description" />
+          <select id="change-stage" aria-label="Approval stage">
+            <option value="Proposed">Proposed</option>
+            <option value="Dept vote">Dept vote</option>
+            <option value="A&S curriculum">A&amp;S curriculum</option>
+            <option value="Faculty Senate">Faculty Senate</option>
+            <option value="Enacted">Enacted</option>
+          </select>
+          <button type="submit" class="btn">Log it</button>
+        </form>
+        <ul id="change-list" class="change-list"></ul>
+      </section>
+    </main>
+
+    <footer class="site-footer wrap">
+      <p>
+        Chair planning workspace. Meeting-time conflict checks use URI&rsquo;s standard
+        class-time blocks (Registration &amp; Records). This tool does not write to e-Campus;
+        it&rsquo;s for building and sanity-checking the rotation before submission.
+      </p>
+    </footer>
+  </div>
+
+  <!-- Section editor dialog -->
+  <div id="sec-backdrop" class="backdrop hidden"></div>
+  <div id="sec-dialog" class="picker hidden" role="dialog" aria-modal="true" aria-labelledby="sec-title">
+    <div class="picker-head">
+      <h3 id="sec-title">Section</h3>
+      <button id="sec-close" class="icon-btn" aria-label="Close">&times;</button>
+    </div>
+    <div id="sec-body" class="picker-body"></div>
+  </div>
+
+  <!-- Export / import dialog -->
+  <div id="io-backdrop" class="backdrop hidden"></div>
+  <div id="io-dialog" class="picker hidden" role="dialog" aria-modal="true" aria-labelledby="io-title">
+    <div class="picker-head">
+      <h3 id="io-title">Export</h3>
+      <button id="io-close" class="icon-btn" aria-label="Close">&times;</button>
+    </div>
+    <div id="io-body" class="picker-body"></div>
+  </div>
+
+  <!-- Reuse the planner's data + live sheet so the course list stays in sync. -->
+  <script src="../data.js"></script>
+  <script src="../sequences.js"></script>
+  <script src="../live-source.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

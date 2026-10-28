@@ -1,0 +1,107 @@
+/* Course Rotation Builder — chair admin styles.
+   Layers on top of the planner's styles.css (shared palette/buttons). */
+
+.admin-body { background: #eef2f7; }
+
+/* ---- Passphrase gate ---- */
+.gate {
+  position: fixed; inset: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+  background: linear-gradient(135deg, var(--uri-blue), var(--uri-blue-2));
+}
+.gate-card {
+  background: #fff; border-radius: 16px; max-width: 420px; width: 100%;
+  padding: 28px 28px 22px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+}
+.gate-card h1 { margin: 0 0 6px; color: var(--uri-blue); font-size: 1.4rem; }
+.gate-sub { margin: 0 0 16px; color: var(--muted); font-size: 0.88rem; }
+.gate-card form { display: flex; gap: 8px; }
+.gate-card input { flex: 1; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; font-size: 0.95rem; }
+.gate-error { color: var(--accent); font-size: 0.82rem; margin: 10px 0 0; }
+.gate-note { margin: 14px 0 0; font-size: 0.72rem; color: var(--muted); }
+
+/* ---- Header ---- */
+.admin-header { background: linear-gradient(135deg, var(--uri-blue), var(--uri-blue-2)); color: #fff; padding: 14px 0; }
+.admin-header-wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.admin-header h1 { margin: 0; font-size: 1.25rem; }
+.admin-tagline { margin: 2px 0 0; font-size: 0.78rem; color: #cfe0f2; }
+.admin-header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.admin-header-actions select { padding: 7px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.5); background: rgba(255,255,255,0.14); color: #fff; font-size: 0.85rem; }
+.admin-header-actions select option { color: #10203f; }
+
+.admin-main { padding: 16px 16px 40px; }
+
+/* ---- Conflict banner ---- */
+.conflict-banner { border-radius: 10px; padding: 10px 14px; margin: 10px 0 16px; font-size: 0.85rem; }
+.conflict-banner.ok { background: #e7f6ec; color: #1c6b38; border: 1px solid #b6e0c4; }
+.conflict-banner.bad { background: #fdeef0; color: #8a1f2d; border: 1px solid #f0c0c7; }
+.conflict-banner ul { margin: 6px 0 0; padding-left: 18px; }
+.conflict-banner li { margin: 2px 0; }
+.conflict-banner li.cf-instructor::marker { content: "👤 "; }
+.conflict-banner li.cf-room::marker { content: "🚪 "; }
+.conflict-banner li.cf-path::marker { content: "🎓 "; }
+
+/* ---- Layout ---- */
+.admin-grid-wrap { display: grid; grid-template-columns: 240px 1fr; gap: 16px; align-items: start; }
+@media (max-width: 860px) { .admin-grid-wrap { grid-template-columns: 1fr; } }
+
+.tray { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 12px; position: sticky; top: 10px; }
+.tray h2 { margin: 0 0 4px; font-size: 1rem; color: var(--uri-blue); }
+.tray-hint { margin: 0 0 10px; font-size: 0.72rem; color: var(--muted); }
+.tray-list { display: flex; flex-direction: column; gap: 6px; min-height: 40px; }
+.tray-empty, .cl-empty { font-size: 0.8rem; color: var(--muted); }
+
+.sched-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 860px) { .sched-grid { grid-template-columns: 1fr; } }
+.sched-col { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 10px; }
+.sched-col h3 { margin: 0 0 8px; font-size: 0.9rem; color: var(--uri-blue); position: sticky; top: 0; }
+.slot { margin-bottom: 6px; }
+.slot-label { font-size: 0.72rem; font-weight: 700; color: var(--muted); margin-bottom: 2px; }
+.slot-drop {
+  min-height: 34px; border: 1px dashed var(--line); border-radius: 7px; padding: 4px;
+  display: flex; flex-direction: column; gap: 4px; background: #fafcff;
+}
+.slot-drop.drag-over { border-color: var(--uri-sky); background: #eef6ff; outline: 2px solid var(--uri-sky); }
+.slot-empty { color: #c3ccd6; font-size: 0.8rem; text-align: center; }
+
+/* ---- Section chips ---- */
+.sec-chip {
+  background: #fff; border: 1px solid var(--uri-sky); border-left: 4px solid var(--uri-blue);
+  border-radius: 6px; padding: 4px 7px; cursor: grab; font-size: 0.78rem; line-height: 1.25;
+  box-shadow: 0 1px 3px rgba(0,20,50,0.08);
+}
+.sec-chip:active { cursor: grabbing; }
+.sec-chip.conflict { border-color: var(--accent); border-left-color: var(--accent); background: #fff6f7; }
+.sec-chip-main { font-weight: 700; display: block; }
+.sec-chip-meta { color: var(--muted); font-size: 0.68rem; }
+.chip-flag { display: inline-block; margin-top: 2px; font-size: 0.66rem; color: var(--accent); font-weight: 700; }
+
+/* ---- Section editor form ---- */
+.sec-form { display: flex; flex-direction: column; gap: 10px; }
+.sec-form label { display: flex; flex-direction: column; gap: 3px; font-size: 0.8rem; font-weight: 600; }
+.sec-form input, .sec-form select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 0.9rem; font-weight: 400; }
+.sec-form-actions { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
+
+/* ---- Change log ---- */
+.change-log { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-top: 18px; }
+.change-log h2 { margin: 0 0 4px; font-size: 1.05rem; color: var(--uri-blue); }
+.change-log-intro { margin: 0 0 12px; font-size: 0.8rem; color: var(--muted); }
+.change-form { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.change-form input { flex: 1; min-width: 200px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 0.86rem; }
+.change-form select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 0.86rem; }
+.change-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.cl-item { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 7px; font-size: 0.84rem; }
+.cl-stage { font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 99px; white-space: nowrap; }
+.cl-proposed { background: #eef2f7; color: #4a5a6a; }
+.cl-deptvote { background: #fff3d6; color: #8a6400; }
+.cl-ascurriculum { background: #e6eefc; color: #234a99; }
+.cl-facultysenate { background: #efe6fc; color: #5a2a99; }
+.cl-enacted { background: #e7f6ec; color: #1c6b38; }
+.cl-text { flex: 1; }
+.cl-date { color: var(--muted); font-size: 0.72rem; white-space: nowrap; }
+.cl-del { border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 1rem; }
+.cl-del:hover { color: var(--accent); }
+
+/* ---- IO dialog ---- */
+.io-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 10px; }
+#io-body h4 { margin: 10px 0 4px; font-size: 0.82rem; color: var(--uri-blue); }
