@@ -48,3 +48,5 @@ instructions (free GitHub Pages pilot).
 This is a planning aid, not an official degree audit. Students must verify every
 requirement with their advisor and the Department of Music. Official requirements
 live in the University Catalog.
+
+<!-- deploy check 2026-10-28 -->
