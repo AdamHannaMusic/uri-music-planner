@@ -243,7 +243,9 @@ select:focus-visible, button:focus-visible, .slot:focus-visible {
    glance, like the old spreadsheet. */
 .term-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  /* minmax(0, 1fr) lets columns shrink below their content width so all terms
+     fit the viewport (content clips) instead of forcing horizontal scroll. */
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 5px;
 }
 .term {
@@ -611,19 +613,23 @@ select.gened-list { font-size: 0.82rem; }
   .help-panel { right: 8px; left: 8px; width: auto; bottom: 8px; }
 }
 
-/* Responsive */
-@media (max-width: 1150px) {
-  .term-grid { grid-template-columns: repeat(3, 1fr); }
-}
+/* Responsive. Columns use minmax(0, 1fr) so they shrink to fit instead of
+   forcing horizontal scroll. We keep 4 columns (the 8-term "4×2 at a glance"
+   layout) down to fairly narrow widths, only reducing on small tablets/phones. */
 @media (max-width: 920px) {
   .controls { grid-template-columns: 1fr 1fr; }
   .planner { grid-template-columns: 1fr; }
   .palette { position: static; max-height: none; }
-  .term-grid { grid-template-columns: repeat(2, 1fr); }
+  .term-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 680px) {
+  .term-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 560px) {
   .controls { grid-template-columns: 1fr; }
-  .term-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 420px) {
+  .term-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* Print — mirror the spreadsheet: 4 columns, one degree per page. */
