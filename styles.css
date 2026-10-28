@@ -753,3 +753,51 @@ select.gened-list { font-size: 0.82rem; }
 @media (prefers-reduced-motion: reduce) {
   .swat-fly, .swat-fly.swat-buzz, .swat-fly.swat-hit { transition: none; animation: none; }
 }
+
+/* ---- "START HERE" empty state -------------------------------------------- */
+.empty-title { margin: 0 0 8px; color: var(--uri-blue); font-size: 1.25rem; }
+.empty-sub { color: var(--muted); font-size: 0.86rem; }
+.start-here {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-bottom: 10px; color: var(--uri-blue); font-weight: 800;
+}
+.start-here-arrow {
+  font-size: 1.8rem; line-height: 1; display: inline-block;
+  animation: startHereBob 1.3s ease-in-out infinite;
+}
+.start-here-label { letter-spacing: 1px; font-size: 0.95rem; }
+@keyframes startHereBob {
+  0%, 100% { transform: translateY(0) rotate(-8deg); }
+  50% { transform: translateY(-6px) rotate(-8deg); }
+}
+@media (prefers-reduced-motion: reduce) { .start-here-arrow { animation: none; } }
+
+/* Apply-for-Graduation button accent */
+.btn.grad { border-color: #b78900; color: #7a5c00; }
+.btn.grad:hover { background: #fff6da; }
+
+/* ---- Forms repository ----------------------------------------------------- */
+.forms-repo {
+  margin: 24px auto 8px; padding: 16px 18px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+}
+.forms-repo h2 { margin: 0 0 4px; font-size: 1.05rem; color: var(--uri-blue); }
+.forms-repo-intro { margin: 0 0 12px; font-size: 0.82rem; color: var(--muted); }
+.forms-list {
+  list-style: none; margin: 0 0 12px; padding: 0;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px 18px;
+}
+.form-row { display: flex; align-items: baseline; gap: 8px; padding: 3px 0; }
+.form-link { color: var(--uri-blue); font-weight: 600; font-size: 0.86rem; text-decoration: none; }
+.form-link:hover { text-decoration: underline; }
+.form-name { font-size: 0.86rem; }
+.form-search {
+  font-size: 0.7rem; color: var(--muted); text-decoration: none;
+  border: 1px solid var(--line); border-radius: 99px; padding: 1px 8px; white-space: nowrap;
+}
+.form-search:hover { background: #eef4fb; color: var(--uri-blue); }
+.forms-fallback { margin: 0; font-size: 0.78rem; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 10px; }
+.forms-fallback a { color: var(--uri-blue); }
+
+/* Keep the forms repository off printed output. */
+@media print { .forms-repo { display: none !important; } }

@@ -5,6 +5,7 @@
   const { TERMS, TERM_IDS, COURSES, DEGREES } = window.PLANNER_DATA;
   const UPPER_DIVISION = window.PLANNER_DATA.UPPER_DIVISION || { history: [], theory: [] };
   const RESOLUTIONS = window.PLANNER_DATA.RESOLUTIONS || {};
+  const LINKS = window.PLANNER_DATA.LINKS || { forms: [] };
   // Read fresh each call: the live rotation sheet may have replaced this list.
   function majorEnsembles() { return window.PLANNER_DATA.MAJOR_ENSEMBLES || []; }
   function isMajorEnsembleSlot(label) { return !!label && /major\s+ensemble/i.test(label); }
@@ -1181,6 +1182,8 @@
     el.tentative.addEventListener("change", () => { state.showTentative = el.tentative.checked; save(); });
     el.availOnly.addEventListener("change", () => { state.availOnly = el.availOnly.checked; save(); });
     el.print.addEventListener("click", () => window.print());
+    const gradBtn = document.getElementById("btn-grad");
+    if (gradBtn) gradBtn.addEventListener("click", openGraduation);
     const swatBtn = document.getElementById("btn-swat");
     if (swatBtn) swatBtn.addEventListener("click", () => window.toggleBatonSwat());
     el.autofill.addEventListener("click", () => {
@@ -1224,6 +1227,43 @@
     }
   }
 
+  // ---- Graduation button -------------------------------------------------
+  // Opens the official apply-to-graduate page. If the direct URL is ever
+  // stale, the student can fall back to a scoped search (offered in a small
+  // confirm) so this stays useful without maintenance.
+  function openGraduation() {
+    const g = LINKS.graduation || {};
+    const url = g.url || g.search;
+    if (!url) return;
+    window.open(url, "_blank", "noopener");
+  }
+
+  // ---- Forms repository --------------------------------------------------
+  function renderFormsRepo() {
+    const list = document.getElementById("forms-list");
+    const fallback = document.getElementById("forms-fallback");
+    if (!list) return;
+    const forms = (LINKS.forms || []);
+    list.innerHTML = forms.map((f) => {
+      const main = f.url
+        ? `<a class="form-link" href="${escapeHtml(f.url)}" target="_blank" rel="noopener">${escapeHtml(f.name)} ↗</a>`
+        : `<span class="form-name">${escapeHtml(f.name)}</span>`;
+      const search = f.search
+        ? ` <a class="form-search" href="${escapeHtml(f.search)}" target="_blank" rel="noopener" title="Can't find it? Search uri.edu">search</a>`
+        : "";
+      return `<li class="form-row">${main}${search}</li>`;
+    }).join("");
+
+    // Catch-all fallbacks for any broken/outdated link.
+    const mf = LINKS.musicFormsPage, uf = LINKS.universityFormsPage;
+    const parts = [];
+    if (mf) parts.push(`<a href="${escapeHtml(mf.url || mf.search)}" target="_blank" rel="noopener">${escapeHtml(mf.label)} ↗</a>`);
+    if (uf) parts.push(`<a href="${escapeHtml(uf.url || uf.search)}" target="_blank" rel="noopener">${escapeHtml(uf.label)} ↗</a>`);
+    if (fallback && parts.length) {
+      fallback.innerHTML = `Link out of date? Find any form here: ${parts.join(" &nbsp;·&nbsp; ")}`;
+    }
+  }
+
   async function init() {
     load();
     // Wait for the live sheet to load (or fail) before building the UI, so the
@@ -1254,6 +1294,7 @@
     render();
     setupBannerMascot();
     updateBannerBest();   // show the persistent Baton Swat high score, if any
+    renderFormsRepo();    // forms & official links at the bottom
     // The help assistant is a self-contained module (site/help/). Start it if present.
     if (typeof window.initHelpAssistant === "function") window.initHelpAssistant();
   }

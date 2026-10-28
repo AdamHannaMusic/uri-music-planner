@@ -777,5 +777,80 @@ const RESOLUTIONS = {
   },
 };
 
+/*
+ * LINKS — graduation, forms repository, and fallback pages.
+ * -----------------------------------------------------------------------
+ * EVERYTHING an advisor might need to update lives here, in one place.
+ *
+ * Because a static site can't verify a URL is alive at click time, each
+ * important link carries a `search` fallback: a Google query scoped to
+ * uri.edu that always surfaces the current official page even if the direct
+ * URL moves. The UI shows a small "can't find it? search" link next to each.
+ *
+ * To update a link: change its `url`. To make a link "search-only" (so it
+ * never goes stale), set url to "" and it will use the search fallback.
+ */
+const LINKS = {
+  // Graduation: apply-to-graduate instructions + the actual application.
+  graduation: {
+    label: "Apply for Graduation",
+    url: "https://web.uri.edu/enrollment/graduation/",
+    search: "https://www.google.com/search?q=" + encodeURIComponent("URI apply to graduate application site:uri.edu"),
+    note: "Opens URI's official graduation / apply-to-graduate page.",
+  },
+
+  // Fallback destinations if any specific form link is dead.
+  musicFormsPage: {
+    label: "URI Music forms & resources",
+    url: "https://web.uri.edu/music/",
+    search: "https://www.google.com/search?q=" + encodeURIComponent("URI Music department forms site:uri.edu"),
+  },
+  universityFormsPage: {
+    label: "URI University forms (A&S / Enrollment Services)",
+    url: "https://web.uri.edu/artsci/current-students/",
+    search: "https://www.google.com/search?q=" + encodeURIComponent("URI Arts and Sciences student forms site:uri.edu"),
+  },
+
+  // The forms repository shown at the bottom of the page. Each entry links to
+  // the form's current URL; if that ever breaks, the fallback pages above
+  // catch the student. Add/edit/remove freely — one line each.
+  forms: [
+    { name: "Apply for Graduation", url: "https://web.uri.edu/enrollment/graduation/",
+      search: "https://www.google.com/search?q=" + encodeURIComponent("URI apply to graduate site:uri.edu") },
+    { name: "Curriculum Modification (waiver / substitution)", url: "https://web.uri.edu/wp-content/uploads/sites/1132/Curriculum-Mod-Form-1.pdf",
+      search: "https://www.google.com/search?q=" + encodeURIComponent("URI Arts Sciences curriculum modification form site:uri.edu") },
+    { name: "Transfer Credit Re-evaluation", url: "https://web.uri.edu/artsci/wp-content/uploads/sites/1132/AS_Transfer_Credit_Reevaluation.pdf",
+      search: "https://www.google.com/search?q=" + encodeURIComponent("URI transfer credit re-evaluation form site:uri.edu") },
+    { name: "Change of Major / Add a Major or Minor", url: "https://web.uri.edu/enrollment/change-of-major/",
+      search: "https://www.google.com/search?q=" + encodeURIComponent("URI change of major form site:uri.edu") },
+    { name: "Declare a Minor", url: "https://web.uri.edu/music/",
+      search: "https://www.google.com/search?q=" + encodeURIComponent("URI declare minor form site:uri.edu") },
+    { name: "Overload / Excess Credits petition", url: "https://web.uri.edu/artsci/current-students/",
+      search: "https://www.google.com/search?q=" + encodeURIComponent("URI Arts Sciences credit overload form site:uri.edu") },
+    { name: "Independent Study", url: "https://web.uri.edu/artsci/current-students/",
+      search: "https://www.google.com/search?q=" + encodeURIComponent("URI independent study form site:uri.edu") },
+    { name: "Leave of Absence / Withdrawal", url: "https://web.uri.edu/enrollment/",
+      search: "https://www.google.com/search?q=" + encodeURIComponent("URI leave of absence withdrawal form site:uri.edu") },
+  ],
+};
+
+/*
+ * USAGE LOG / EMAIL CODE — PLACEHOLDER FOR A FUTURE FEATURE (not used yet).
+ * -----------------------------------------------------------------------
+ * The tool currently opens straight to the planner with no email prompt.
+ * When you're ready to add "enter your email to get your code" plus an
+ * advisor usage log, create a Google Form (one short-answer "email" question,
+ * optionally a "code" question), paste its details here, and wire it up.
+ * A static site can't send email or write to a database on its own, so a
+ * Google Form (free) is the simplest way to log emails into a Sheet an
+ * advisor can read. Nothing in the app reads this object today.
+ */
+const USAGE_LOG = {
+  googleFormUrl: "",   // the form's /formResponse POST URL
+  emailField: "",      // entry.* id for the email question
+  codeField: "",       // entry.* id for the save-code question (optional)
+  enabled: false,      // flip on only after the above are filled in + code is wired
+};
+
 // Expose to the app
-window.PLANNER_DATA = { TERMS, TERM_IDS, COURSES, DEGREES, UPPER_DIVISION, MAJOR_ENSEMBLES, RESOLUTIONS };
+window.PLANNER_DATA = { TERMS, TERM_IDS, COURSES, DEGREES, UPPER_DIVISION, MAJOR_ENSEMBLES, RESOLUTIONS, LINKS, USAGE_LOG };

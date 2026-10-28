@@ -67,13 +67,20 @@
         <button id="btn-open" type="button" class="btn ghost">Load a code</button>
         <button id="btn-autofill" type="button" class="btn ghost">Auto-fill plan</button>
         <button id="btn-print" type="button" class="btn ghost">Print / Save PDF</button>
+        <button id="btn-grad" type="button" class="btn ghost grad">🎓 Apply for Graduation</button>
         <button id="btn-reset" type="button" class="btn ghost danger">Reset plan</button>
       </div>
     </section>
 
-    <!-- Empty state -->
+    <!-- Empty state: a clear "start here" call to action for first-time visitors. -->
     <section id="empty-state" class="empty">
-      <p>Pick a degree above and we&rsquo;ll pre-fill a suggested term-by-term plan. Drag courses between terms to make it yours. Your work is saved automatically in this browser &mdash; and when you want to keep it or open it on another computer, use <strong>Save / get my code</strong> to get a personal code you can load back in anytime.</p>
+      <div class="start-here" aria-hidden="true">
+        <span class="start-here-arrow">⤴</span>
+        <span class="start-here-label">START HERE</span>
+      </div>
+      <h2 class="empty-title">Let&rsquo;s build your plan</h2>
+      <p>Pick your <strong>degree / option</strong> from the menu above and we&rsquo;ll pre-fill a suggested term-by-term plan. Then drag courses between terms, swap options, and add or remove classes to make it your own.</p>
+      <p class="empty-sub">Your work saves automatically in this browser. Use <strong>Save / get my code</strong> to keep it or open it on another computer anytime.</p>
     </section>
 
     <!-- Planner -->
@@ -135,6 +142,20 @@
     <div id="code-body" class="picker-body"></div>
   </div>
 
+  <!-- Forms repository: quick links to the official URI forms, with built-in
+       fallbacks to the Music / University forms pages if a link ever breaks.
+       Populated from PLANNER_DATA.LINKS in app.js. -->
+  <section id="forms-repo" class="forms-repo wrap" aria-labelledby="forms-repo-title">
+    <h2 id="forms-repo-title">Forms &amp; official links</h2>
+    <p class="forms-repo-intro">
+      Common Music &amp; University forms. If a link is out of date, use the
+      <strong>search</strong> option next to it, or the catch-all pages at the bottom &mdash;
+      they always lead to the current official forms.
+    </p>
+    <ul id="forms-list" class="forms-list"></ul>
+    <p id="forms-fallback" class="forms-fallback"></p>
+  </section>
+
   <footer class="site-footer wrap">
     <p>
       Planning tool only. Course offerings are <em>projected</em> and may change.
@@ -142,6 +163,8 @@
       University Catalog. Both major and cumulative GPA must be 2.00+ to graduate.
     </p>
   </footer>
+
+
 
   <!-- Maestro Rhody: advising chat that points to official URI pages. Starts
        minimized as an inviting prompt; click the header to open it. -->
