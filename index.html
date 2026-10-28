@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>URI Music — Course Sequence Planner</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <h1>URI Music Course Sequence Planner</h1>
+      <p class="tagline">
+        Pick your degree to load the department&rsquo;s recommended
+        semester-by-semester plan, then drag courses around, swap options, and
+        add or remove classes to make it your own.
+      </p>
+      <p id="source-status" class="source-status" aria-live="polite">Checking course schedule…</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- Controls -->
+    <section class="controls" aria-label="Plan setup">
+      <div class="field">
+        <label for="degree-select">Degree / option</label>
+        <select id="degree-select" aria-describedby="degree-help">
+          <option value="">Choose your program…</option>
+        </select>
+        <p id="degree-help" class="help">Loads that worksheet's required courses.</p>
+      </div>
+
+      <div class="field">
+        <label for="start-select">Starting term</label>
+        <select id="start-select"></select>
+        <p class="help">Your plan runs from here through Spring 2031.</p>
+      </div>
+
+      <div class="field toggles">
+        <label class="check">
+          <input type="checkbox" id="toggle-tentative" checked />
+          Show tentative (<span class="chip tentative-chip">?</span>) offerings
+        </label>
+        <label class="check">
+          <input type="checkbox" id="toggle-availonly" />
+          Only let me place a course in terms it&rsquo;s offered
+        </label>
+      </div>
+
+      <div class="field actions">
+        <button id="btn-save" type="button" class="btn">Save / get my code</button>
+        <button id="btn-open" type="button" class="btn ghost">Load a code</button>
+        <button id="btn-autofill" type="button" class="btn ghost">Auto-fill plan</button>
+        <button id="btn-print" type="button" class="btn ghost">Print / Save PDF</button>
+        <button id="btn-reset" type="button" class="btn ghost danger">Reset plan</button>
+      </div>
+    </section>
+
+    <!-- Empty state -->
+    <section id="empty-state" class="empty">
+      <p>Pick a degree above and we&rsquo;ll pre-fill a suggested term-by-term plan. Drag courses between terms to make it yours. Your work is saved automatically in this browser &mdash; and when you want to keep it or open it on another computer, use <strong>Save / get my code</strong> to get a personal code you can load back in anytime.</p>
+    </section>
+
+    <!-- Planner -->
+    <div id="planner" class="planner hidden">
+      <!-- Requirements palette -->
+      <aside class="palette" aria-label="Required courses">
+        <div class="palette-head">
+          <h2 id="degree-title">Requirements</h2>
+          <div class="progress">
+            <div class="progress-bar"><span id="progress-fill"></span></div>
+            <p id="progress-text" class="help"></p>
+          </div>
+        </div>
+        <div id="requirements"></div>
+      </aside>
+
+      <!-- Term grid -->
+      <section class="terms" aria-label="Your plan by term">
+        <div id="term-grid" class="term-grid"></div>
+
+        <!-- Official catalog requirements for the selected degree -->
+        <section id="catalog-panel" class="catalog hidden" aria-label="Official University requirements">
+          <h3 class="catalog-head">Your official University requirements</h3>
+          <p class="catalog-intro">
+            Below is the full set of requirements you <strong>must follow</strong> to complete
+            this degree at URI, exactly as stated by the University. These are your official
+            requirements and can be verified at the catalog link below.
+          </p>
+          <div id="catalog-content" class="catalog-content"></div>
+          <p class="disclaimer">
+            <strong>Disclaimer:</strong> This planner is for planning purposes only. It is not an
+            official degree audit and does not guarantee graduation. You are responsible for
+            verifying every requirement yourself and confirming your plan with your academic
+            advisor and the Department of Music. Official requirements are governed by the
+            University Catalog.
+          </p>
+        </section>
+      </section>
+    </div>
+  </main>
+
+  <!-- Course detail / picker popover -->
+  <div id="picker-backdrop" class="backdrop hidden"></div>
+  <div id="picker" class="picker hidden" role="dialog" aria-modal="true" aria-labelledby="picker-title">
+    <div class="picker-head">
+      <h3 id="picker-title">Place course</h3>
+      <button id="picker-close" class="icon-btn" aria-label="Close">&times;</button>
+    </div>
+    <div id="picker-body" class="picker-body"></div>
+  </div>
+
+  <!-- Save / Load code dialog -->
+  <div id="code-backdrop" class="backdrop hidden"></div>
+  <div id="code-dialog" class="picker hidden" role="dialog" aria-modal="true" aria-labelledby="code-title">
+    <div class="picker-head">
+      <h3 id="code-title">Your plan code</h3>
+      <button id="code-close" class="icon-btn" aria-label="Close">&times;</button>
+    </div>
+    <div id="code-body" class="picker-body"></div>
+  </div>
+
+  <footer class="site-footer wrap">
+    <p>
+      Planning tool only. Course offerings are <em>projected</em> and may change.
+      Confirm every term with your Music advisor; official requirements live in the
+      University Catalog. Both major and cumulative GPA must be 2.00+ to graduate.
+    </p>
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="sequences.js"></script>
+  <script src="gened.js"></script>
+  <script src="catalog.js"></script>
+  <script src="live-source.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

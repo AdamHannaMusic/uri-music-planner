@@ -1,0 +1,4 @@
+# Keep the published site clean. Only the app files in this folder are served.
+.DS_Store
+*.pdf
+*.xlsx
