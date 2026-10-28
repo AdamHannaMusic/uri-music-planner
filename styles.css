@@ -35,11 +35,63 @@ body {
 .site-header {
   background: linear-gradient(135deg, var(--uri-blue), var(--uri-blue-2));
   color: #fff;
-  padding: 7px 0 8px;
+  padding: 12px 0 14px;
   border-bottom: 2px solid var(--uri-sky);
+  overflow: hidden;              /* keep the mascot fully contained in the banner */
 }
-.site-header h1 { margin: 0 0 1px; font-size: 1.02rem; letter-spacing: 0.2px; }
-.tagline { margin: 0; color: #cfe0f2; max-width: 95ch; font-size: 0.72rem; }
+/* Reserve vertical room so the mascot fits inside the blue area, and keep the
+   text column clear of the mascot on the right. */
+.site-header .wrap { position: relative; min-height: 128px; padding-right: 200px; }
+.site-header h1 { margin: 0; font-size: 1.3rem; letter-spacing: 0.2px; }
+.tagline { margin: 4px 0 0; color: #cfe0f2; max-width: 72ch; font-size: 0.74rem; }
+.brand-text { display: flex; flex-direction: column; align-items: flex-start; }
+
+/* Baton Swat launcher, anchored in the blue banner just left of Maestro Rhody. */
+.banner-game-btn {
+  position: absolute; right: 165px; bottom: 16px; z-index: 2;
+  border: 1px solid rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.14);
+  color: #fff; font-size: 0.8rem; font-weight: 700;
+  padding: 7px 14px; border-radius: 999px; cursor: pointer; white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+.banner-game-btn:hover { background: rgba(255,255,255,0.26); }
+.banner-game-btn:active { transform: scale(0.97); }
+.banner-game-btn:focus-visible { outline: 2px solid #ffd36b; outline-offset: 2px; }
+
+/* Persistent Baton Swat high score, sitting just above the Play button. */
+.banner-best {
+  position: absolute; right: 165px; bottom: 52px; z-index: 2;
+  font-size: 0.74rem; font-weight: 700; color: #ffd36b; white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+}
+.banner-best b { color: #fff; font-size: 0.82rem; }
+
+@media (max-width: 700px) {
+  /* On small screens put the button + badge below the title (static flow). */
+  .banner-game-btn { position: static; margin-top: 8px; align-self: flex-start; }
+  .banner-best { position: static; margin-top: 6px; }
+}
+.brand-sub { margin: 0; font-size: 0.72rem; color: #bcd2ea; font-weight: 600; letter-spacing: 0.2px; }
+
+/* Maestro Rhody anchored bottom-right, sitting ON the banner (sized to its
+   height so it never spills past the blue). */
+.banner-mascot {
+  position: absolute; right: 10px; bottom: -14px;
+  height: 150px; width: auto;
+  pointer-events: none; line-height: 0;
+}
+.banner-mascot img {
+  display: block; height: 150px; width: auto;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.35));
+}
+.banner-mascot img.pose-swap { animation: rhodyPop 0.3s ease-out; }
+@media (max-width: 700px) {
+  .site-header .wrap { padding-right: 96px; min-height: 92px; }
+  .banner-mascot, .banner-mascot img { height: 100px; }
+  .banner-mascot { bottom: -10px; right: 6px; }
+}
 
 .source-status {
   margin: 6px 0 0; font-size: 0.7rem; color: #bcd2ea;
@@ -234,7 +286,27 @@ select:focus-visible, button:focus-visible, .slot:focus-visible {
   line-height: 1.25;
   white-space: nowrap;
   overflow: hidden;
+  cursor: grab;
+  touch-action: none; /* let pointer-drag work on touch without scrolling */
+  user-select: none;
 }
+.placed-course:active { cursor: grabbing; }
+
+/* The box being dragged (original) dims in place. */
+.placed-course.drag-source { opacity: 0.35; }
+
+/* The floating clone that follows the cursor. */
+.drag-ghost {
+  position: fixed; z-index: 100; pointer-events: none;
+  margin: 0; cursor: grabbing;
+  box-shadow: 0 8px 24px rgba(0, 20, 50, 0.3);
+  transform: rotate(-1.5deg) scale(1.03);
+  opacity: 0.96;
+  border-color: var(--uri-sky) !important;
+}
+/* while dragging, suppress hover actions popping up under the cursor */
+body.dragging-course .pc-actions { opacity: 0 !important; }
+body.dragging-course { cursor: grabbing; }
 .placed-course.warn-term { border-color: var(--warn); background: #fff9ef; }
 .placed-course.bad-term { border-color: var(--accent); background: #fdeef0; }
 .placed-course .pc-code { font-weight: 700; flex: none; }
@@ -452,6 +524,93 @@ select.gened-list { font-size: 0.82rem; }
 /* Footer */
 .site-footer { margin: 30px auto; color: var(--muted); font-size: 0.8rem; max-width: 80ch; }
 
+/* Help assistant — always-open chat docked bottom-right */
+.help-panel {
+  position: fixed; right: 16px; bottom: 16px; z-index: 60;
+  width: min(340px, calc(100vw - 32px)); max-height: min(420px, 60vh);
+  display: flex; flex-direction: column;
+  background: #fff; border: 1px solid var(--line); border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 20, 50, 0.28);
+  overflow: hidden;
+}
+.help-panel.minimized { max-height: none; }
+.help-panel.minimized .help-log,
+.help-panel.minimized .help-form,
+.help-panel.minimized .help-disclaimer { display: none; }
+/* The whole header is a button that opens/closes the chat. */
+.help-head {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 10px 14px; background: var(--uri-blue); color: #fff;
+  border: 0; text-align: left; cursor: pointer; font: inherit;
+  transition: background 0.15s ease;
+}
+.help-head:hover { background: var(--uri-blue-2, #0a4f9e); }
+.help-head:focus-visible { outline: 2px solid #ffd36b; outline-offset: -2px; }
+.help-title { font-size: 0.9rem; font-weight: 700; }
+.help-tease { flex: 1; font-size: 0.82rem; font-weight: 600; color: #e8f1fb; }
+.help-head .icon-btn { color: #fff; font-size: 1.2rem; margin-left: auto; }
+
+/* Show the inviting tease only while minimized; show the plain title only
+   while open. The title also carries a little 💬 when minimized via ::before. */
+.help-tease { display: none; }
+.help-panel.minimized .help-tease { display: block; }
+.help-panel.minimized .help-title { display: none; }     /* tease replaces it when closed */
+.help-panel:not(.minimized) .help-title { display: block; flex: 1; }
+
+/* Welcome header: greeting text on the left, animated Maestro Rhody top-right. */
+.help-welcome {
+  position: relative;
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 10px 14px 8px;
+  background:
+    radial-gradient(130% 80% at 85% 10%, rgba(117,170,219,0.22), transparent 60%),
+    linear-gradient(180deg, #f4f8fd 0%, #ffffff 100%);
+  border-bottom: 1px solid var(--line);
+}
+.help-welcome-text {
+  display: flex; flex-direction: column; gap: 2px;
+}
+.help-welcome-text strong { font-size: 0.98rem; color: var(--uri-blue); line-height: 1.2; }
+.help-welcome-text span { font-size: 0.74rem; color: var(--muted); }
+
+@keyframes rhodyPop { from { transform: translateY(8px) scale(0.96); opacity: 0.3; } to { transform: none; opacity: 1; } }
+.help-panel.minimized .help-welcome { display: none; }
+.help-log { flex: 1; overflow-y: auto; padding: 8px 12px; display: flex; flex-direction: column; gap: 8px; min-height: 90px; }
+
+.help-typing { color: var(--muted); font-style: italic; }
+.help-typing::after {
+  content: "♪"; margin-left: 2px;
+  animation: rhodyPulse 0.9s ease-in-out infinite;
+  display: inline-block;
+}
+@keyframes rhodyPulse { 0%,100%{opacity:.3;transform:translateY(0)} 50%{opacity:1;transform:translateY(-2px)} }
+
+.help-bubble { font-size: 0.8rem; line-height: 1.4; padding: 8px 10px; border-radius: 10px; max-width: 92%; }
+.help-bubble.bot { background: #eef3f9; color: var(--text); border-bottom-left-radius: 3px; }
+.help-bubble.user { background: var(--uri-blue); color: #fff; align-self: flex-end; border-bottom-right-radius: 3px; }
+.help-links { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.help-links a { font-size: 0.78rem; font-weight: 600; color: var(--uri-blue-2); }
+
+.help-starter-label { margin: 2px 0 0; font-size: 0.72rem; color: var(--muted); font-weight: 600; }
+.help-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.help-chip {
+  border: 1px solid var(--uri-sky); background: #f1f7fd; color: var(--uri-blue);
+  font-size: 0.72rem; padding: 4px 9px; border-radius: 99px; cursor: pointer; text-align: left;
+}
+.help-chip:hover { background: #e2eefb; }
+.help-chip.sm { font-size: 0.68rem; padding: 3px 8px; }
+.help-related { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; margin-top: 2px; }
+.help-related-label { font-size: 0.68rem; color: var(--muted); font-weight: 600; }
+
+.help-form { display: flex; gap: 6px; padding: 10px 12px; border-top: 1px solid var(--line); }
+.help-form input { flex: 1; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 0.82rem; }
+.help-form .btn { padding: 8px 12px; font-size: 0.8rem; }
+.help-disclaimer { margin: 0; padding: 0 12px 10px; font-size: 0.68rem; color: var(--muted); }
+
+@media (max-width: 560px) {
+  .help-panel { right: 8px; left: 8px; width: auto; bottom: 8px; }
+}
+
 /* Responsive */
 @media (max-width: 1150px) {
   .term-grid { grid-template-columns: repeat(3, 1fr); }
@@ -469,7 +628,7 @@ select.gened-list { font-size: 0.82rem; }
 
 /* Print — mirror the spreadsheet: 4 columns, one degree per page. */
 @media print {
-  .site-header, .controls, .site-footer, .palette, #picker, .backdrop, .remove-btn, .add-entry, .pc-actions { display: none !important; }
+  .site-header, .controls, .site-footer, .palette, #picker, .backdrop, .remove-btn, .add-entry, .pc-actions, .help-panel { display: none !important; }
   .planner { grid-template-columns: 1fr; }
   .term-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
   .term { break-inside: avoid; box-shadow: none; }
@@ -477,4 +636,114 @@ select.gened-list { font-size: 0.82rem; }
   .catalog { break-inside: avoid; box-shadow: none; }
   body { background: #fff; }
   @page { margin: 10mm; size: landscape; }
+}
+
+/* ---- Baton Swat! mini-game ------------------------------------------------ */
+/* A transparent full-page layer that holds the darting fly + score HUD. The
+   layer itself ignores clicks (so the page stays usable); only the fly and HUD
+   controls are interactive. */
+.swat-layer {
+  position: fixed; inset: 0; z-index: 900;
+  pointer-events: none;                 /* page stays clickable underneath */
+}
+.swat-hud {
+  position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 14px;
+  background: rgba(10, 32, 64, 0.92); color: #fff;
+  padding: 8px 14px; border-radius: 999px;
+  font-size: 0.85rem; box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+  pointer-events: auto;
+}
+.swat-hud b { font-size: 1rem; }
+.swat-title { font-weight: 700; color: #ffd36b; letter-spacing: 0.2px; }
+.swat-best { color: #ffd36b; }
+.swat-over-card .swat-bestline { margin: -6px 0 14px; color: #555; font-size: 0.85rem; }
+.swat-quit {
+  border: 0; background: #e0533d; color: #fff; cursor: pointer;
+  padding: 4px 10px; border-radius: 999px; font-size: 0.78rem;
+}
+.swat-quit:hover { background: #c7442f; }
+
+/* The fly: an interactive button positioned absolutely. Uses dedicated art
+   (background-image) when available, otherwise shows the 🪰 emoji. */
+.swat-fly {
+  position: fixed; width: 44px; height: 44px; margin: -22px 0 0 -22px;
+  border: 0; background: transparent; cursor: crosshair;
+  font-size: 32px; line-height: 44px; text-align: center; padding: 0;
+  pointer-events: auto;
+  transition: left 2.6s cubic-bezier(.37,0,.4,1), top 2.6s cubic-bezier(.37,0,.4,1);
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3));
+}
+.swat-fly.has-art {
+  background-size: contain; background-repeat: no-repeat; background-position: center;
+  font-size: 0;                         /* hide emoji fallback when art loads */
+}
+.swat-fly.swat-buzz { animation: swatBuzz 0.45s ease-in-out; }
+
+/* The fly's annoying speech bubble — solid, bordered, high-contrast. */
+.swat-taunt {
+  position: fixed; z-index: 901; pointer-events: none;
+  transform: translate(-50%, -100%);
+  background: #fffbe6; color: #10203f; border: 2px solid var(--uri-blue);
+  font-size: 0.92rem; font-weight: 700; font-style: italic;
+  padding: 8px 13px; border-radius: 14px; white-space: nowrap; max-width: 90vw;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+  opacity: 0;
+  transition: left 2.6s cubic-bezier(.37,0,.4,1), top 2.6s cubic-bezier(.37,0,.4,1), opacity 0.25s ease;
+}
+.swat-taunt.show { opacity: 1; }
+.swat-taunt::after {   /* tail (border + fill) pointing down to the fly */
+  content: ""; position: absolute; left: 50%; top: 100%;
+  transform: translateX(-50%);
+  border: 8px solid transparent; border-top-color: var(--uri-blue);
+}
+.swat-taunt.below { transform: translate(-50%, 0); }
+.swat-taunt.below::after {
+  top: auto; bottom: 100%; border-top-color: transparent; border-bottom-color: var(--uri-blue);
+}
+
+/* Big splashy title shown at the start of a round. */
+.swat-bigtitle {
+  position: fixed; z-index: 902; pointer-events: none;
+  top: 24%; left: 50%; transform: translateX(-50%);
+  text-align: center; line-height: 1.1;
+  font-size: clamp(1.8rem, 6vw, 4rem); font-weight: 900; font-style: italic;
+  letter-spacing: 0.5px; color: #fff; max-width: 92vw;
+  text-shadow: 0 3px 0 var(--uri-blue), 0 6px 20px rgba(0,0,0,0.45);
+  animation: swatBigPop 0.5s cubic-bezier(.2,1.3,.4,1);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.swat-bigtitle.fade { opacity: 0; transform: translateX(-50%) translateY(-12px) scale(0.96); }
+@keyframes swatBigPop {
+  0% { transform: translateX(-50%) scale(0.6); opacity: 0; }
+  100% { transform: translateX(-50%) scale(1); opacity: 1; }
+}
+
+.swat-fly.swat-hit { animation: swatHit 0.18s ease-out forwards; }
+@keyframes swatBuzz {
+  0%,100% { transform: translate(0,0) rotate(0); }
+  25% { transform: translate(2px,-2px) rotate(8deg); }
+  50% { transform: translate(-2px,1px) rotate(-6deg); }
+  75% { transform: translate(1px,2px) rotate(4deg); }
+}
+@keyframes swatHit {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+/* Final-score card */
+.swat-over {
+  position: fixed; inset: 0; z-index: 950;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(10, 32, 64, 0.45); pointer-events: auto;
+}
+.swat-over-card {
+  background: #fff; border-radius: 14px; padding: 22px 26px; text-align: center;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.3); max-width: 300px;
+}
+.swat-over-card h3 { margin: 0 0 6px; color: var(--uri-blue); }
+.swat-over-card p { margin: 0 0 14px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .swat-fly, .swat-fly.swat-buzz, .swat-fly.swat-hit { transition: none; animation: none; }
 }

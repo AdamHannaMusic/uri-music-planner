@@ -3,13 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>URI Music — Course Sequence Planner</title>
+  <title>Maestro Rhody — URI Music Course Planner</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="site-header">
     <div class="wrap">
-      <h1>URI Music Course Sequence Planner</h1>
+      <!-- Maestro Rhody in the banner. Shows a static pose that changes with
+           activity: periodic/random swaps, "thinking" while a course is dragged,
+           reactions to chat replies, and a playful pose when clicked. -->
+      <div class="banner-mascot" aria-hidden="true">
+        <img id="banner-mascot-img" src="help/maestro-rhody-default-static.png"
+             alt="Maestro Rhody" loading="eager" onerror="this.style.display='none'" />
+      </div>
+      <button id="btn-swat" type="button" class="banner-game-btn">🎶 Play Baton Swat!</button>
+      <!-- Persistent Baton Swat high score (shown once a game has been played). -->
+      <div id="banner-best" class="banner-best hidden" aria-live="polite">
+        🏆 Baton Swat best: <b id="banner-best-val">0</b>
+      </div>
+      <div class="brand-text">
+        <h1>Maestro Rhody</h1>
+        <p class="brand-sub">URI Music Course Sequence Planner</p>
+      </div>
       <p class="tagline">
         Pick your degree to load the department&rsquo;s recommended
         semester-by-semester plan, then drag courses around, swap options, and
@@ -128,10 +143,36 @@
     </p>
   </footer>
 
+  <!-- Maestro Rhody: advising chat that points to official URI pages. Starts
+       minimized as an inviting prompt; click the header to open it. -->
+  <section id="help-panel" class="help-panel minimized" role="complementary" aria-label="Maestro Rhody music advising assistant">
+    <button type="button" id="help-head" class="help-head" aria-expanded="false" aria-controls="help-log">
+      <span class="help-title">Maestro Rhody</span>
+      <span class="help-tease">💬 Chat with me for answers to your advising questions</span>
+      <span id="help-min" class="icon-btn" aria-hidden="true">▢</span>
+    </button>
+    <!-- Welcome header: text only (Maestro Rhody's poses live in the page banner). -->
+    <div class="help-welcome">
+      <div class="help-welcome-text">
+        <strong>Welcome to Maestro Rhody</strong>
+        <span>Your URI Music advising assistant</span>
+      </div>
+    </div>
+    <div id="help-log" class="help-log" aria-live="polite"></div>
+    <form id="help-form" class="help-form">
+      <input id="help-input" type="text" autocomplete="off"
+             placeholder="Message Maestro Rhody…" aria-label="Type your question" />
+      <button type="submit" class="btn">Ask</button>
+    </form>
+    <p class="help-disclaimer">Planning aid, not official advising. Always confirm with your Music advisor.</p>
+  </section>
+
   <script src="data.js"></script>
   <script src="sequences.js"></script>
   <script src="gened.js"></script>
   <script src="catalog.js"></script>
+  <script src="help/help-data.js"></script>
+  <script src="help/help.js"></script>
   <script src="live-source.js"></script>
   <script src="app.js"></script>
 </body>

@@ -462,15 +462,9 @@
     add.addEventListener("click", () => openAddPicker(termId));
     zone.appendChild(add);
 
-    zone.addEventListener("dragover", (e) => { e.preventDefault(); zone.classList.add("drag-over"); });
-    zone.addEventListener("dragleave", () => zone.classList.remove("drag-over"));
-    zone.addEventListener("drop", (e) => {
-      e.preventDefault();
-      zone.classList.remove("drag-over");
-      const id = e.dataTransfer.getData("text/plain");
-      const entry = state.entries.find((x) => x.id === id);
-      if (entry) { entry.term = termId; render(); }
-    });
+    // Drop target for the custom pointer-drag (see startDrag). The zone is
+    // identified by its data-term; drag logic highlights/drops via that.
+    zone.dataset.dropzone = "1";
 
     const rm = card.querySelector(".term-remove");
     if (rm) rm.addEventListener("click", (e) => { e.stopPropagation(); removeLastExtraTerm(); });
@@ -542,6 +536,72 @@
 
   function isExtraTerm(termId) { return typeof termId === "string" && /^X\d+$/.test(termId); }
 
+  // ---- Custom pointer-based drag -----------------------------------------
+  // Gives a smooth "drag the item with your cursor" feel (native HTML5 drag
+  // ghosts render poorly for our tiny compact boxes). A floating clone follows
+  // the pointer; the term zone under it highlights; releasing drops the course.
+  let dragCtx = null;
+
+  function startDrag(e, entry, node) {
+    const startX = e.clientX, startY = e.clientY;
+    const THRESH = 4; // px of movement before a drag actually begins (so clicks still work)
+    let started = false, ghost = null, lastZone = null;
+    // offset of the pointer within the box, so the clone sits under the cursor naturally
+    const rect = node.getBoundingClientRect();
+    const offX = startX - rect.left, offY = startY - rect.top;
+    const width = rect.width;
+
+    function onMove(ev) {
+      if (!started) {
+        if (Math.abs(ev.clientX - startX) < THRESH && Math.abs(ev.clientY - startY) < THRESH) return;
+        started = true;
+        document.body.classList.add("dragging-course");
+        node.classList.add("drag-source");
+        // Maestro Rhody looks thoughtful while you move a course around.
+        if (typeof window.setBannerPose === "function") window.setBannerPose("think");
+        // build the floating clone
+        ghost = node.cloneNode(true);
+        ghost.classList.add("drag-ghost");
+        ghost.style.width = width + "px";
+        document.body.appendChild(ghost);
+      }
+      ev.preventDefault();
+      ghost.style.left = (ev.clientX - offX) + "px";
+      ghost.style.top = (ev.clientY - offY) + "px";
+
+      // find the dropzone under the pointer (hide ghost so it isn't the hit)
+      ghost.style.pointerEvents = "none";
+      const under = document.elementFromPoint(ev.clientX, ev.clientY);
+      const zone = under && under.closest(".dropzone");
+      if (zone !== lastZone) {
+        if (lastZone) lastZone.classList.remove("drag-over");
+        if (zone) zone.classList.add("drag-over");
+        lastZone = zone;
+      }
+    }
+
+    function onUp(ev) {
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+      if (!started) return; // was a click, not a drag
+      document.body.classList.remove("dragging-course");
+      node.classList.remove("drag-source");
+      if (ghost) ghost.remove();
+      // done thinking — Maestro Rhody goes back to conducting
+      if (typeof window.resetBannerPose === "function") window.resetBannerPose();
+      if (lastZone) {
+        lastZone.classList.remove("drag-over");
+        const term = lastZone.dataset.term;
+        if (term && term !== entry.term) { entry.term = term; render(); return; }
+      }
+      // dropped outside any term — just re-render to restore appearance
+      render();
+    }
+
+    document.addEventListener("pointermove", onMove, { passive: false });
+    document.addEventListener("pointerup", onUp);
+  }
+
   function renderEntry(entry, termId) {
     // Availability is meaningless in the mods/transfer bucket and in extra
     // semesters past the rotation window (no projected data there), so don't flag.
@@ -552,7 +612,6 @@
       (entry.gened ? " gened" : "") +
       (avail === "tentative" ? " warn-term" : "") +
       (avail === "none" ? " bad-term" : "");
-    node.setAttribute("draggable", "true");
     node.dataset.id = entry.id;
 
     const isGenedSlot = !!entry.gened;
@@ -596,9 +655,13 @@
       `<button class="remove-btn" title="Remove" aria-label="Remove">&times;</button>` +
       `</span>`;
 
-    node.addEventListener("dragstart", (e) => {
-      e.dataTransfer.setData("text/plain", entry.id);
-      e.dataTransfer.effectAllowed = "move";
+    // Custom pointer drag: a floating copy follows the cursor and term zones
+    // highlight as you pass over them (like dragging a file into a folder).
+    node.addEventListener("pointerdown", (e) => {
+      // ignore clicks on the action buttons (remove / swap / choose)
+      if (e.target.closest(".pc-actions, button")) return;
+      if (e.button !== 0 && e.pointerType === "mouse") return; // left button only
+      startDrag(e, entry, node);
     });
     node.querySelector(".remove-btn").addEventListener("click", (e) => {
       e.stopPropagation();
@@ -1088,6 +1151,8 @@
     el.tentative.addEventListener("change", () => { state.showTentative = el.tentative.checked; save(); });
     el.availOnly.addEventListener("change", () => { state.availOnly = el.availOnly.checked; save(); });
     el.print.addEventListener("click", () => window.print());
+    const swatBtn = document.getElementById("btn-swat");
+    if (swatBtn) swatBtn.addEventListener("click", () => window.toggleBatonSwat());
     el.autofill.addEventListener("click", () => {
       if (state.entries.length && !confirm("Reset to the recommended sequence? This replaces your current edits.")) return;
       autoFill();
@@ -1157,7 +1222,439 @@
     el.availOnly.checked = state.availOnly;
     if (DEGREES[state.degree]) reflowToStart();
     render();
+    setupBannerMascot();
+    updateBannerBest();   // show the persistent Baton Swat high score, if any
+    // The help assistant is a self-contained module (site/help/). Start it if present.
+    if (typeof window.initHelpAssistant === "function") window.initHelpAssistant();
   }
+
+  // ---- Banner mascot: Maestro Rhody in the blue header ----------------------
+  // Idle = the looping conducting animation. He briefly strikes random poses to
+  // stay lively, switches to "thinking" while a course is being dragged, and
+  // reacts to chat replies via window.setBannerPose(pose, holdMs).
+  let bannerReturnTimer = null, bannerIdleTimer = null, bannerHeld = false;
+  // Animated poses (looping GIFs). Each filename maps to one of the uploaded
+  // Maestro Rhody animations. Swap a filename here to retarget a pose.
+  // Static pose art (clean first-frame PNGs — the animated GIFs looked too
+  // wavy). Swap a filename here to retarget a pose.
+  const MASCOT = {
+    idle: "help/maestro-rhody-default-static.png",      // conducting, baton up — home pose
+    still: "help/maestro-rhody-still.png",               // reduced-motion fallback
+    think: "help/maestro-rhody-thinking-static.png",     // hand on chin, "?"
+    listen: "help/maestro-rhody-listening-static.png",   // hand out, sound waves
+    explain: "help/maestro-rhody-explaining-static.png", // pointing up with notes
+    point: "help/maestro-rhody-pointing-static.png",     // pointing to the side (directional)
+    teach: "help/maestro-rhody-teaching-static.png",     // chin + sparkles (how-to)
+    reassure: "help/maestro-rhody-reassuring-static.png",// gentle reassurance
+    celebrate: "help/maestro-rhody-celebrating-static.png", // thumbs up (positive/done)
+    shrug: "help/maestro-rhody-shrug-static.png",        // no match / unknown
+    tuba: "help/maestro-rhody-tuba-static.png",          // surprise tuba solo
+    sneeze: "help/maestro-rhody-sneezing-static.png",    // achoo! (fun click reaction)
+    swat: "help/maestro-rhody-swatting-away-static.png", // swatting a fly away
+    // Baton pose during the Baton Swat game stays ANIMATED — Maestro Rhody
+    // gently conducts with his baton while you play. He flips to the "swat"
+    // pose on each hit.
+    baton: "help/maestro-rhody-default.gif",
+  };
+  // Poses cycled through the idle slideshow (every ~5s). Includes "idle"
+  // (conducting) so the home pose comes back around too.
+  const IDLE_ROTATION = ["idle", "celebrate", "point", "think", "tuba", "explain", "teach", "reassure"];
+  const IDLE_INTERVAL_MS = 5000;   // swap to a new pose roughly every 5 seconds
+  // Playful poses when someone clicks him in the banner.
+  const CLICK_POSES = ["sneeze", "swat", "tuba"];
+  const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function setupBannerMascot() {
+    const img = document.getElementById("banner-mascot-img");
+    if (!img) return;
+    // reduced motion: show the still conducting image and do nothing dynamic
+    if (reduceMotion) { img.src = MASCOT.still; return; }
+
+    // Let people click Maestro Rhody for a playful reaction (sneeze / swat /
+    // tuba). The wrapper ignores clicks so it never blocks the page; only the
+    // image itself is interactive.
+    img.style.pointerEvents = "auto";
+    img.style.cursor = "pointer";
+    img.setAttribute("role", "button");
+    img.setAttribute("tabindex", "0");
+    img.setAttribute("title", "Click me!");
+    img.parentElement.removeAttribute("aria-hidden"); // make it reachable
+    img.setAttribute("aria-label", "Maestro Rhody — click for a surprise");
+    function reactToClick() {
+      if (gameState) return;             // don't interrupt the Baton Swat game
+      const pose = CLICK_POSES[Math.floor(Math.random() * CLICK_POSES.length)];
+      window.setBannerPose(pose, 2600);
+    }
+    img.addEventListener("click", reactToClick);
+    img.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); reactToClick(); }
+    });
+
+    function toIdle() {
+      bannerHeld = false;
+      swap(MASCOT.idle);
+      scheduleIdleWander();
+    }
+    function swap(src) {
+      if (img.getAttribute("src") === src) return;
+      img.src = src;
+      img.classList.remove("pose-swap");
+      void img.offsetWidth;            // restart the little pop
+      img.classList.add("pose-swap");
+    }
+    let lastIdlePose = "idle";
+    function scheduleIdleWander() {
+      clearTimeout(bannerIdleTimer);
+      // Steady slideshow: swap to a different random pose every ~5 seconds so
+      // Maestro Rhody stays lively. "idle" (conducting) is part of the mix.
+      bannerIdleTimer = setTimeout(() => {
+        if (bannerHeld) { scheduleIdleWander(); return; } // something else is driving him right now
+        // pick a pose different from the one currently showing
+        let pose;
+        do { pose = IDLE_ROTATION[Math.floor(Math.random() * IDLE_ROTATION.length)]; }
+        while (pose === lastIdlePose && IDLE_ROTATION.length > 1);
+        lastIdlePose = pose;
+        swap(MASCOT[pose]);
+        scheduleIdleWander();
+      }, IDLE_INTERVAL_MS);
+    }
+
+    // Public: set a specific pose for holdMs, then drift back to idle wandering.
+    window.setBannerPose = function (pose, holdMs) {
+      if (reduceMotion) return;
+      const src = MASCOT[pose];
+      if (!src) return;
+      bannerHeld = true;
+      clearTimeout(bannerIdleTimer);
+      clearTimeout(bannerReturnTimer);
+      swap(src);
+      if (pose !== "think") { // "think" is held until explicitly released (e.g. drag end)
+        bannerReturnTimer = setTimeout(toIdle, holdMs || 3000);
+      }
+    };
+    // Public: force the idle animation back (used when a drag ends).
+    window.resetBannerPose = function () { clearTimeout(bannerReturnTimer); toIdle(); };
+
+    // kick off the gentle idle wandering
+    scheduleIdleWander();
+  }
+
+  // ---- Baton Swat! mini-game -------------------------------------------------
+  // Maestro Rhody grips his baton in the banner while a fly zips around the
+  // page; click/tap the fly to swat it for points. Runs for a fixed round.
+  // The fly art and the "swat" mascot animation are filename-driven (FLY_SRC
+  // and MASCOT.baton) so dedicated art can be dropped in later without code
+  // changes.
+  const FLY_SRC = "help/fly.gif";            // dedicated art (falls back to emoji if missing)
+  const GAME_SECONDS = 60;
+  const FLY_HOP_MS = 4000;                    // how often the Bad Intonation Fly drifts to a new spot (slow enough to read its taunt)
+  const HIT_REACT_MS = 700;                   // how long the swat reaction lingers after a hit
+  // Annoying things the Bad Intonation Fly says as it buzzes around.
+  const FLY_TAUNTS = [
+    "hehe, I play out of tune!",
+    "take that, major chord!",
+    "what is pitch anyways?",
+    "why should I tune it?",
+    "I sound like an oboe",
+    "tuning fork? forks are for food!",
+    "440 Hz is just a suggestion",
+    "sharp? flat? who's counting?",
+    "vibrato hides everything, baby",
+    "I LIVE between the keys",
+    "the metronome fears me",
+    "A = 437, close enough!",
+    "I transpose by accident",
+    "intonation is a scam",
+    "every note is a surprise",
+    "I buzz in quarter tones",
+    "warm up? never heard of it",
+    "the reed is always someone else's fault",
+    "I play in the cracks",
+    "perfect pitch is overrated",
+    "let's call it 'expressive' tuning",
+    "the drone? I ignore the drone",
+    "I round to the nearest wrong note",
+    "harmony is for quitters",
+    "I'm not flat, the room is",
+    "concert B-flat? I prefer chaos",
+    "my favorite key is out-of-tune major",
+    "I slide into every note late",
+    "orchestras hate this one trick",
+    "I tuned once. in 2009.",
+    "close enough is my whole career",
+    "I make the conductor sweat",
+    "the tuner app is my sworn enemy",
+    "I prefer my thirds extra wide",
+    "key signatures are just vibes",
+    "I came in two bars early, on purpose",
+    "the oboe gave an A? bold of them",
+    "I double every part, badly",
+    "rests are optional, honestly",
+    "I'm the reason the piano got retuned",
+    "flat is just low-energy sharp",
+    "staccato? I slur everything",
+    "the fermata lasts until I'm bored",
+    "I treat dynamics as a rumor",
+    "pitch is a social construct",
+    "my sustain pedal is stuck, forever",
+    "I count to four. eventually.",
+    "the conductor's baton can't catch me",
+    "I added a key change nobody asked for",
+    "equal temperament? never met her",
+    "I bend notes like a cheap music stand",
+    "tempo is a loose guideline",
+    "I wobble, therefore I am",
+    "the triangle player judges me. good.",
+    "I'm flat in three languages",
+    "I rushed the ritardando",
+    "every cadenza, I improvise... wrong",
+    "I ate the resin. it was there.",
+    "I hum a different key for fun",
+    "the chorus hates sitting near me",
+    "I peaked in middle school band",
+    "crescendo means 'get lost,' right?",
+    "I'm microtonal and proud",
+    "my bow has a mind of its own",
+    "sight-reading? more like sight-guessing",
+    "I turned the page too loudly, deal with it",
+    "the recital hall echoes my mistakes forever",
+    "I tune to the air conditioner",
+    "D-flat and C-sharp are both wrong when I play them",
+    "I swing when it's supposed to be straight",
+    "the string section flinches when I enter",
+    "I modulate to confuse everyone",
+    "half step, whole step, wrong step",
+    "I never found concert pitch, and I'm okay",
+    "the drummer keeps better pitch than me",
+    "I play forte when it says 'please stop'",
+    "my vibrato is just panic",
+    "I treat the fermata like a nap",
+    "accidentals? all of them are accidents",
+    "I'm the buzz in your favorite recording",
+    "the metronome and I are not on speaking terms",
+    "I'm consistently inconsistent",
+  ];
+  const BEST_KEY = "batonSwatBest";           // localStorage key for the high score
+  let gameState = null;
+
+  function getBestScore() {
+    const n = parseInt(localStorage.getItem(BEST_KEY) || "0", 10);
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  }
+  function saveBestScore(n) {
+    try { localStorage.setItem(BEST_KEY, String(n)); } catch (e) { /* storage may be blocked */ }
+  }
+  // Keep the persistent best-score badge in the banner in sync. Hidden until a
+  // game has been played (best > 0), then it stays visible across sessions.
+  function updateBannerBest() {
+    const wrap = document.getElementById("banner-best");
+    const val = document.getElementById("banner-best-val");
+    if (!wrap || !val) return;
+    const best = getBestScore();
+    if (best > 0) { val.textContent = best; wrap.classList.remove("hidden"); }
+    else { wrap.classList.add("hidden"); }
+  }
+
+  function startBatonSwat() {
+    if (reduceMotion) return;                 // respect reduced motion
+    if (gameState) return;                    // already running
+
+    const bannerImg = document.getElementById("banner-mascot-img");
+    // Hold Maestro Rhody in his baton pose and pause the idle wandering.
+    bannerHeld = true;
+    clearTimeout(bannerIdleTimer);
+    clearTimeout(bannerReturnTimer);
+    if (bannerImg && MASCOT.baton) bannerImg.src = MASCOT.baton;
+
+    // Build the game layer (fly + HUD) over the whole page.
+    const layer = document.createElement("div");
+    layer.className = "swat-layer";
+    layer.innerHTML =
+      '<div class="swat-hud">' +
+        '<span class="swat-title">🪰 Bad Intonation Fly!</span>' +
+        '<span class="swat-score">Score: <b>0</b></span>' +
+        '<span class="swat-best">Best: <b>' + getBestScore() + '</b></span>' +
+        '<span class="swat-time">Time: <b>' + GAME_SECONDS + '</b>s</span>' +
+        '<button type="button" class="swat-quit">Stop game</button>' +
+      '</div>' +
+      '<div class="swat-bigtitle">SWAT THE BAD INTONATION FLY!</div>';
+    document.body.appendChild(layer);
+    // The big splashy title fades away after a couple of seconds so it doesn't
+    // cover the playfield.
+    const bigTitle = layer.querySelector(".swat-bigtitle");
+    setTimeout(() => { if (bigTitle) bigTitle.classList.add("fade"); }, 1900);
+
+    const fly = document.createElement("button");
+    fly.type = "button";
+    fly.className = "swat-fly";
+    fly.setAttribute("aria-label", "Swat the Bad Intonation Fly");
+    fly.setAttribute("title", "Bad Intonation Fly!");
+    // Use the dedicated fly art if present; otherwise fall back to an emoji.
+    const flyImg = new Image();
+    flyImg.onload = () => { fly.style.backgroundImage = "url('" + FLY_SRC + "')"; fly.classList.add("has-art"); };
+    flyImg.onerror = () => { fly.textContent = "🪰"; };
+    flyImg.src = FLY_SRC;
+    layer.appendChild(fly);
+
+    // Annoying speech bubble that trails the fly.
+    const taunt = document.createElement("div");
+    taunt.className = "swat-taunt";
+    layer.appendChild(taunt);
+
+    const scoreEl = layer.querySelector(".swat-score b");
+    const bestEl = layer.querySelector(".swat-best b");
+    const timeEl = layer.querySelector(".swat-time b");
+
+    let lastTaunt = -1;
+    gameState = { score: 0, timeLeft: GAME_SECONDS, layer, fly, taunt, prevBest: getBestScore(), hopTimer: null, tickTimer: null, reactTimer: null };
+
+    function placeTaunt(x, y) {
+      // Prefer showing the bubble above the fly; flip below if near the top.
+      const below = y < 120;
+      taunt.style.left = Math.round(x) + "px";
+      taunt.style.top = Math.round(y + (below ? 30 : -14)) + "px";
+      taunt.classList.toggle("below", below);
+    }
+    // When the current taunt is allowed to be replaced. A taunt stays put for
+    // a minimum readable time that scales with its length, so even if the fly
+    // keeps moving the words don't flash by too fast to read.
+    let tauntReadableUntil = 0;
+    function readTimeFor(text) {
+      // ~65ms per character, clamped to a comfortable 3.5s–6s window so even
+      // short quotes stay up long enough and long ones get extra time.
+      return Math.min(6000, Math.max(3500, text.length * 65));
+    }
+    function nextTaunt() {
+      let i;
+      do { i = Math.floor(Math.random() * FLY_TAUNTS.length); }
+      while (i === lastTaunt && FLY_TAUNTS.length > 1);
+      lastTaunt = i;
+      const text = FLY_TAUNTS[i];
+      taunt.textContent = text;
+      tauntReadableUntil = Date.now() + readTimeFor(text);
+    }
+
+    function moveFly() {
+      // Keep the fly inside the viewport with a margin, avoiding the HUD strip.
+      const m = 48;
+      const x = m + Math.random() * (window.innerWidth - m * 2);
+      const y = 70 + Math.random() * (window.innerHeight - 70 - m);
+      fly.style.left = Math.round(x) + "px";
+      fly.style.top = Math.round(y) + "px";
+      fly.classList.remove("swat-buzz");
+      void fly.offsetWidth;
+      fly.classList.add("swat-buzz");
+      // Only swap to a new taunt once the current one has been up long enough
+      // to read; otherwise keep the same words and just move the bubble along.
+      if (Date.now() >= tauntReadableUntil) nextTaunt();
+      placeTaunt(x, y);
+      taunt.classList.add("show");
+    }
+
+    function hit(ev) {
+      ev.preventDefault();
+      if (!gameState) return;
+      gameState.score += 1;
+      scoreEl.textContent = gameState.score;
+      // Live-update the Best display if this run is setting a new record.
+      if (gameState.score > getBestScore()) {
+        saveBestScore(gameState.score);
+        if (bestEl) bestEl.textContent = gameState.score;
+        updateBannerBest();   // keep the persistent banner badge current too
+      }
+      // Splat feedback, then flip Maestro Rhody into his swat reaction and let
+      // it linger before returning to the baton pose.
+      fly.classList.add("swat-hit");
+      taunt.classList.remove("show");   // silence the taunt on a hit
+      tauntReadableUntil = 0;           // the swatted fly's taunt is done; next one is fresh
+      if (bannerImg && MASCOT.swat) bannerImg.src = MASCOT.swat;
+      // Reposition the fly shortly after the splat animation finishes.
+      setTimeout(() => { if (gameState) { fly.classList.remove("swat-hit"); moveFly(); } }, 220);
+      // Hold the swat reaction a beat longer so it reads clearly.
+      clearTimeout(gameState.reactTimer);
+      gameState.reactTimer = setTimeout(() => {
+        if (gameState && bannerImg && MASCOT.baton) bannerImg.src = MASCOT.baton;
+      }, HIT_REACT_MS);
+    }
+    fly.addEventListener("click", hit);
+
+    gameState.hopTimer = setInterval(() => { if (gameState) moveFly(); }, FLY_HOP_MS);
+    gameState.tickTimer = setInterval(() => {
+      if (!gameState) return;
+      gameState.timeLeft -= 1;
+      timeEl.textContent = Math.max(0, gameState.timeLeft);
+      if (gameState.timeLeft <= 0) endGame(true);
+    }, 1000);
+
+    layer.querySelector(".swat-quit").addEventListener("click", () => endGame(false));
+
+    // Toggle the launch button label.
+    const btn = document.getElementById("btn-swat");
+    if (btn) btn.textContent = "✋ Stop Baton Swat";
+
+    moveFly();
+  }
+
+  function endGame(finished) {
+    if (!gameState) return;
+    const { layer, score, prevBest } = gameState;
+    clearInterval(gameState.hopTimer);
+    clearInterval(gameState.tickTimer);
+    clearTimeout(gameState.reactTimer);
+
+    // Lock in the best score.
+    if (score > getBestScore()) saveBestScore(score);
+    const best = getBestScore();
+    const isRecord = score > prevBest && score > 0;
+    updateBannerBest();   // reflect the final best in the persistent banner badge
+
+    const btn = document.getElementById("btn-swat");
+    if (btn) btn.textContent = "🎶 Play Baton Swat!";
+
+    if (finished) {
+      // Show a quick final score, then clean up.
+      const over = document.createElement("div");
+      over.className = "swat-over";
+      over.innerHTML = '<div class="swat-over-card">' +
+        '<h3>' + (isRecord ? "🏆 New best!" : "Nice swatting!") + '</h3>' +
+        '<p>You swatted <b>' + score + '</b> Bad Intonation Fl' + (score === 1 ? 'y' : 'ies') + '.</p>' +
+        '<p class="swat-bestline">Best score: <b>' + best + '</b></p>' +
+        '<button type="button" class="btn">Done</button></div>';
+      layer.appendChild(over);
+      over.querySelector("button").addEventListener("click", () => layer.remove());
+      // celebrate in the banner
+      const bannerImg = document.getElementById("banner-mascot-img");
+      if (bannerImg && MASCOT.celebrate) bannerImg.src = MASCOT.celebrate;
+    } else {
+      layer.remove();
+    }
+
+    gameState = null;
+    // Return Maestro Rhody to his idle conducting + resume wandering.
+    if (typeof window.resetBannerPose === "function") window.resetBannerPose();
+  }
+
+  window.startBatonSwat = startBatonSwat;
+  window.stopBatonSwat = function () { endGame(false); };
+  window.toggleBatonSwat = function () { if (gameState) endGame(false); else startBatonSwat(); };
+
+  // Read-only context the help assistant uses to give degree-specific answers.
+  // Returns the selected degree key, its display name, and its requirement
+  // groups (label/note/courses) so the chatbot can state real numbers.
+  window.getPlannerContext = function () {
+    const deg = DEGREES[state.degree];
+    return {
+      degreeKey: state.degree || null,
+      degreeName: deg ? deg.name : null,
+      credits: deg ? deg.credits : null,
+      groups: deg ? deg.groups : null,
+      // the live/fallback set of courses that count as a major ensemble
+      majorEnsembles: (window.PLANNER_DATA.MAJOR_ENSEMBLES || []).slice(),
+      upperDivision: window.PLANNER_DATA.UPPER_DIVISION || null,
+      courseTitle: (code) => (COURSES[code] ? COURSES[code].title : code),
+      allDegrees: Object.keys(DEGREES).map((k) => ({ key: k, name: DEGREES[k].name, groups: DEGREES[k].groups })),
+    };
+  };
 
   document.addEventListener("DOMContentLoaded", init);
 })();

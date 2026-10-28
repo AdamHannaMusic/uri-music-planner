@@ -1,8 +1,12 @@
-# URI Music Course Sequence Planner
+# Maestro Rhody — URI Music Course Planner
 
 A static web app that lets students (or advisors working with students) build a
 term-by-term course plan for any URI Music degree, from the department's
-recommended sequences and the live projected course rotation.
+recommended sequences and the live projected course rotation. It includes
+**Maestro Rhody**, an always-on advising assistant that answers common questions
+and points to official URI pages.
+
+The project mascot/logo image lives at `help/maestro-rhody.png`.
 
 ## What's in this folder
 
