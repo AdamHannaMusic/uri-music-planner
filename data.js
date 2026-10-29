@@ -794,7 +794,7 @@ const LINKS = {
   // Graduation: apply-to-graduate instructions + the actual application.
   graduation: {
     label: "Apply for Graduation",
-    url: "https://web.uri.edu/enrollment/graduation/",
+    url: "https://web.uri.edu/registration-records/graduation/",
     search: "https://www.google.com/search?q=" + encodeURIComponent("URI apply to graduate application site:uri.edu"),
     note: "Opens URI's official graduation / apply-to-graduate page.",
   },
@@ -815,13 +815,13 @@ const LINKS = {
   // the form's current URL; if that ever breaks, the fallback pages above
   // catch the student. Add/edit/remove freely — one line each.
   forms: [
-    { name: "Apply for Graduation", url: "https://web.uri.edu/enrollment/graduation/",
+    { name: "Apply for Graduation", url: "https://web.uri.edu/registration-records/graduation/",
       search: "https://www.google.com/search?q=" + encodeURIComponent("URI apply to graduate site:uri.edu") },
     { name: "Curriculum Modification (waiver / substitution)", url: "https://web.uri.edu/wp-content/uploads/sites/1132/Curriculum-Mod-Form-1.pdf",
       search: "https://www.google.com/search?q=" + encodeURIComponent("URI Arts Sciences curriculum modification form site:uri.edu") },
     { name: "Transfer Credit Re-evaluation", url: "https://web.uri.edu/artsci/wp-content/uploads/sites/1132/AS_Transfer_Credit_Reevaluation.pdf",
       search: "https://www.google.com/search?q=" + encodeURIComponent("URI transfer credit re-evaluation form site:uri.edu") },
-    { name: "Change of Major / Add a Major or Minor", url: "https://web.uri.edu/enrollment/change-of-major/",
+    { name: "Change of Major / Add a Major or Minor", url: "https://web.uri.edu/registration-records/change-of-major/",
       search: "https://www.google.com/search?q=" + encodeURIComponent("URI change of major form site:uri.edu") },
     { name: "Declare a Minor", url: "https://web.uri.edu/music/",
       search: "https://www.google.com/search?q=" + encodeURIComponent("URI declare minor form site:uri.edu") },

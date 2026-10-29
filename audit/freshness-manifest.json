@@ -1,0 +1,120 @@
+{
+  "_README": "Every external fact the planner depends on. The freshness checker (check-freshness.mjs) fetches each `url` and flags drift: a dead/moved link (bad HTTP status), or — when `watch` text is given — content that no longer contains the expected marker (a sign the page was restructured). It FLAGS for human review; it never edits data. To add a dependency, add an entry here. `kind` is informational. `note` tells a human what to verify if this item is flagged.",
+  "generated": "2026-10-28",
+  "dependencies": [
+    {
+      "id": "rotation-sheet",
+      "kind": "data-source",
+      "label": "Live course rotation Google Sheet (drives course availability)",
+      "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRT6pdXeqoXOvnA7xp1SUMOmHrBlcQ0gMZ1VF-pJGDQy8VA_nbCgsxOYUGWVl_kdxf_V4nvQDIUlDaq/pub?output=csv",
+      "watch": ["CODE", "CREDITS", "MAJOR ENSEMBLE"],
+      "trackContentHash": true,
+      "note": "If content changed, that's expected (the chair edits it). The checker reports WHETHER it changed since last run so you know the live data moved. If it 404s, the Publish-to-web link broke — re-publish and update live-source.js PUBLISHED_URL."
+    },
+    {
+      "id": "kuali-catalog-current",
+      "kind": "api",
+      "label": "URI Kuali catalog API (current catalog id)",
+      "url": "https://uri.kuali.co/api/v1/catalog/public/catalogs/current",
+      "watch": ["id"],
+      "note": "The live catalog text comes from this API (catalog.js). A new catalog id each year is normal. If it 404s or stops returning JSON, the API moved — catalog.js needs updating."
+    },
+    {
+      "id": "catalog-bm",
+      "kind": "page",
+      "label": "URI catalog — Bachelor of Music program page",
+      "url": "https://web.uri.edu/catalog/#/programs/HkQVnRsKuY",
+      "note": "Program id BM_PID in catalog.js. If the BM program id changed, update catalog.js. (Hash-routed SPA; the checker only verifies the catalog host responds.)",
+      "hostOnly": true
+    },
+    {
+      "id": "catalog-ba",
+      "kind": "page",
+      "label": "URI catalog — B.A. Music program page",
+      "url": "https://web.uri.edu/catalog/#/programs/HkQhAsK_t",
+      "note": "Program id BA_PID in catalog.js. If the BA program id changed, update catalog.js.",
+      "hostOnly": true
+    },
+    {
+      "id": "standard-meeting-times",
+      "kind": "policy",
+      "label": "URI standard class meeting-time blocks (admin conflict checker)",
+      "url": "https://web.uri.edu/registration-records/faculty-staff-advisors/classrooms-and-scheduling/",
+      "watch": ["MWF", "Standard time frames"],
+      "trackContentHash": true,
+      "note": "The admin Course Rotation Builder's STANDARD_BLOCKS come from this page. If the page content changed, re-read it and update STANDARD_BLOCKS in site/admin/admin.js."
+    },
+    {
+      "id": "grad-apply",
+      "kind": "link",
+      "label": "Apply for Graduation page (button + forms repo)",
+      "url": "https://web.uri.edu/registration-records/graduation/",
+      "note": "LINKS.graduation in data.js. If moved, update the url (it also has a search fallback)."
+    },
+    {
+      "id": "music-forms-page",
+      "kind": "link",
+      "label": "URI Music department page (forms fallback)",
+      "url": "https://web.uri.edu/music/",
+      "note": "LINKS.musicFormsPage in data.js."
+    },
+    {
+      "id": "as-current-students",
+      "kind": "link",
+      "label": "A&S current students (University forms fallback)",
+      "url": "https://web.uri.edu/artsci/current-students/",
+      "note": "LINKS.universityFormsPage in data.js."
+    },
+    {
+      "id": "form-curriculum-mod",
+      "kind": "link",
+      "label": "A&S Curriculum Modification form (PDF)",
+      "url": "https://web.uri.edu/wp-content/uploads/sites/1132/Curriculum-Mod-Form-1.pdf",
+      "note": "RESOLUTIONS.modification + forms repo in data.js. PDFs move often — if flagged, find the current PDF and update the url."
+    },
+    {
+      "id": "form-transfer-reeval",
+      "kind": "link",
+      "label": "A&S Transfer Credit Re-evaluation form (PDF)",
+      "url": "https://web.uri.edu/artsci/wp-content/uploads/sites/1132/AS_Transfer_Credit_Reevaluation.pdf",
+      "note": "RESOLUTIONS.transfer + forms repo in data.js."
+    },
+    {
+      "id": "transfer-credit-info",
+      "kind": "link",
+      "label": "How transfer credit works at URI",
+      "url": "https://web.uri.edu/transfer/transfer-credit/",
+      "note": "RESOLUTIONS.transfer link in data.js."
+    },
+    {
+      "id": "change-of-major",
+      "kind": "link",
+      "label": "Change of Major form page",
+      "url": "https://web.uri.edu/registration-records/change-of-major/",
+      "note": "Forms repo in data.js."
+    },
+    {
+      "id": "enrollment-services",
+      "kind": "link",
+      "label": "Enrollment Services (leave/withdrawal fallback)",
+      "url": "https://web.uri.edu/enrollment/",
+      "note": "Forms repo in data.js."
+    },
+    {
+      "id": "manual-ch8",
+      "kind": "policy",
+      "label": "University Manual Ch. 8 (double-major GPA/residency/degree rules)",
+      "url": "https://web.uri.edu/manual/chapter-8/",
+      "note": "DOUBLE_MAJOR rules cite this. If flagged, re-read and re-verify the double-major rule text in data.js."
+    },
+    {
+      "id": "programs-undergrad",
+      "kind": "policy",
+      "label": "URI undergraduate majors list (external double-major options)",
+      "url": "https://www.uri.edu/programs/undergraduate-majors/",
+      "watch": ["Undergraduate Majors"],
+      "trackContentHash": true,
+      "note": "EXTERNAL_PROGRAMS in data.js is derived from this page. If it changed, new/renamed/removed majors may need updating in the list."
+    }
+  ]
+}
