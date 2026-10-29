@@ -801,3 +801,47 @@ select.gened-list { font-size: 0.82rem; }
 
 /* Keep the forms repository off printed output. */
 @media print { .forms-repo { display: none !important; } }
+
+/* ---- Double major / dual degree ------------------------------------------ */
+.check-inline { margin-top: 8px; font-size: 0.8rem; }
+#degree2-select { margin-top: 6px; }
+
+.double-major {
+  margin-top: 16px; padding: 16px 18px;
+  background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--uri-blue);
+  border-radius: 10px;
+}
+.dm-title { margin: 0 0 8px; color: var(--uri-blue); font-size: 1.1rem; }
+.dm-kind { margin-bottom: 14px; }
+.dm-kind strong { font-size: 0.95rem; }
+
+.dm-audits { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+@media (max-width: 640px) { .dm-audits { grid-template-columns: 1fr; } }
+.dm-card { background: #f6f9fd; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+.dm-card h4 { margin: 0 0 6px; font-size: 0.9rem; color: var(--uri-blue); }
+.dm-bar { height: 7px; background: #e7ecf2; border-radius: 99px; overflow: hidden; margin-bottom: 6px; }
+.dm-bar span { display: block; height: 100%; background: linear-gradient(90deg, var(--uri-sky), var(--ok)); }
+.dm-card-stat { margin: 0; font-size: 0.74rem; color: var(--muted); }
+
+.dm-shared-box, .dm-obligations, .dm-rules { margin-bottom: 14px; }
+.dm-shared-box h4, .dm-obligations h4, .dm-rules h4 { margin: 0 0 4px; font-size: 0.92rem; color: var(--uri-blue); }
+.dm-count { font-size: 0.72rem; font-weight: 600; color: var(--muted); }
+.dm-shared { margin: 6px 0 0; padding-left: 18px; font-size: 0.82rem; columns: 2; }
+@media (max-width: 640px) { .dm-shared { columns: 1; } }
+.dm-shared li { margin: 2px 0; break-inside: avoid; }
+
+.dm-obligations { background: #fff9ef; border: 1px solid #f0dcae; border-radius: 8px; padding: 10px 12px; }
+.dm-obligations h4 { color: #8a6400; }
+.dm-obligations ul { margin: 6px 0 0; padding-left: 18px; font-size: 0.82rem; }
+.dm-obligations li { margin: 2px 0; }
+
+.dm-rule-list { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.dm-rule-list li { font-size: 0.82rem; line-height: 1.4; }
+.dm-status { display: inline-block; font-size: 0.64rem; font-weight: 800; padding: 1px 7px; border-radius: 99px; vertical-align: middle; letter-spacing: 0.3px; }
+.dm-status.confirmed { background: #e7f6ec; color: #1c6b38; }
+.dm-status.review { background: #fdeef0; color: #8a1f2d; }
+.dm-rule-text { }
+.dm-src { font-size: 0.72rem; color: var(--uri-blue); white-space: nowrap; }
+.dm-disclaimer { margin: 10px 0 0; font-size: 0.74rem; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 10px; }
+
+@media print { .double-major { break-inside: avoid; } }

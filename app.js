@@ -6,6 +6,7 @@
   const UPPER_DIVISION = window.PLANNER_DATA.UPPER_DIVISION || { history: [], theory: [] };
   const RESOLUTIONS = window.PLANNER_DATA.RESOLUTIONS || {};
   const LINKS = window.PLANNER_DATA.LINKS || { forms: [] };
+  const DOUBLE_MAJOR = window.PLANNER_DATA.DOUBLE_MAJOR || { classify: {}, rules: [], musicObligations: [] };
   // Read fresh each call: the live rotation sheet may have replaced this list.
   function majorEnsembles() { return window.PLANNER_DATA.MAJOR_ENSEMBLES || []; }
   function isMajorEnsembleSlot(label) { return !!label && /major\s+ensemble/i.test(label); }
@@ -18,6 +19,7 @@
   //   gen-ed / non-MUS / fill-in blocks. `term` is the term id it sits in.
   const state = {
     degree: "",
+    degree2: "",   // optional second major (double major / dual degree)
     startTerm: TERM_IDS[1], // default: Fall 2027 (typical freshman start)
     showTentative: true,
     availOnly: false,
@@ -35,6 +37,9 @@
   // ---- DOM ---------------------------------------------------------------
   const el = {
     degree: document.getElementById("degree-select"),
+    degree2: document.getElementById("degree2-select"),
+    doubleToggle: document.getElementById("toggle-double"),
+    doublePanel: document.getElementById("double-major"),
     start: document.getElementById("start-select"),
     tentative: document.getElementById("toggle-tentative"),
     availOnly: document.getElementById("toggle-availonly"),
@@ -280,13 +285,17 @@
       if (en.chooseLabel) o.cl = en.chooseLabel;
       return o;
     });
-    return { d: state.degree, s: TERM_IDS.indexOf(state.startTerm), e, x: state.extraTerms || 0 };
+    const payload = { d: state.degree, s: TERM_IDS.indexOf(state.startTerm), e, x: state.extraTerms || 0 };
+    if (state.degree2) payload.d2 = state.degree2;   // optional second major
+    return payload;
   }
 
   function payloadToPlan(p) {
     if (!p || typeof p !== "object" || !Array.isArray(p.e)) throw new Error("This code is missing its plan data.");
     if (p.d && !DEGREES[p.d]) throw new Error("This code is for a program this planner doesn't recognize.");
+    if (p.d2 && !DEGREES[p.d2]) throw new Error("This code is for a program this planner doesn't recognize.");
     state.degree = p.d || "";
+    state.degree2 = p.d2 || "";   // optional second major (older codes omit it)
     state.startTerm = TERM_IDS[p.s] !== undefined ? TERM_IDS[p.s] : (p.s || TERM_IDS[1]);
     state.extraTerms = p.x || 0;
     let n = 0;
@@ -389,6 +398,7 @@
     renderRequirements();
     renderProgress();
     renderCatalog();
+    renderDoubleMajor();
     save();
   }
 
@@ -822,6 +832,114 @@
       `${total} credits planned of ${goal} · ${state.entries.length} courses · ${musCr} MUS credits`;
   }
 
+  // ---- Double major / dual degree ---------------------------------------
+  // Audit a single degree against the placed courses, reusing the exact
+  // code-based matching from renderRequirements. Returns per-group have/needed
+  // plus the set of course codes this degree "consumes".
+  function auditDegree(degKey) {
+    const deg = DEGREES[degKey];
+    if (!deg) return null;
+    const placedCodes = state.entries.map((e) => e.code).filter(Boolean);
+    let needed = 0, have = 0;
+    const consumed = new Set();
+    deg.groups.forEach((group) => {
+      group.courses.forEach((item) => {
+        const rep = item.repeat || 1;
+        if (item.code) {
+          needed += rep;
+          const codes = [item.code, ...(item.alt || [])];
+          const matches = placedCodes.filter((c) => codes.includes(c));
+          have += Math.min(rep, matches.length);
+          matches.forEach((c) => consumed.add(c));
+        } else if (item.choose) {
+          needed += item.choose;
+          const matches = placedCodes.filter((c) => item.from.includes(c));
+          have += Math.min(item.choose, matches.length);
+          matches.forEach((c) => consumed.add(c));
+        } else if (item.placeholder) {
+          needed += rep; // placeholders never auto-satisfy
+        }
+      });
+    });
+    return { key: degKey, name: deg.name, credits: deg.credits, needed, have, consumed };
+  }
+
+  function awardType(degKey) {
+    const n = (DEGREES[degKey] && DEGREES[degKey].name) || "";
+    if (/^\s*B\.?A\.?/i.test(n)) return "BA";
+    if (/^\s*B\.?M\.?/i.test(n)) return "BM";
+    return "OTHER";
+  }
+  function classifyPair(a, b) {
+    // Same award type → double major (one degree). Different → dual degree.
+    return awardType(a) === awardType(b) ? "DOUBLE_MAJOR" : "DUAL_DEGREE";
+  }
+
+  function renderDoubleMajor() {
+    const panel = el.doublePanel;
+    if (!panel) return;
+    const d1 = state.degree, d2 = state.degree2;
+    if (!d1 || !d2 || !DEGREES[d1] || !DEGREES[d2]) { panel.classList.add("hidden"); panel.innerHTML = ""; return; }
+    panel.classList.remove("hidden");
+
+    const a1 = auditDegree(d1), a2 = auditDegree(d2);
+    const kind = classifyPair(d1, d2);
+    const cls = DOUBLE_MAJOR.classify[kind] || {};
+
+    // Shared courses = codes consumed by BOTH majors' requirements.
+    const shared = [...a1.consumed].filter((c) => a2.consumed.has(c)).sort();
+    const sharedCr = shared.reduce((s, c) => s + (COURSES[c] ? creditValue(COURSES[c].cr) : 0), 0);
+
+    const statusBadge = (st) => st === "CONFIRMED"
+      ? `<span class="dm-status confirmed">Confirmed</span>`
+      : `<span class="dm-status review">Advisor review</span>`;
+
+    const sharedList = shared.length
+      ? `<ul class="dm-shared">${shared.map((c) => `<li><strong>${c}</strong> ${escapeHtml(COURSES[c] ? COURSES[c].title : "")}</li>`).join("")}</ul>`
+      : `<p class="help">No shared courses detected yet. As you place courses that both majors require, they'll show here — and their credits count once.</p>`;
+
+    panel.innerHTML =
+      `<h3 class="dm-title">Double major overview</h3>` +
+      `<div class="dm-kind"><strong>${escapeHtml(cls.label || kind)}</strong><p class="help">${escapeHtml(cls.blurb || "")}</p></div>` +
+
+      `<div class="dm-audits">` +
+        dmAuditCard(a1) + dmAuditCard(a2) +
+      `</div>` +
+
+      `<div class="dm-shared-box">` +
+        `<h4>Shared courses <span class="dm-count">${shared.length} course${shared.length === 1 ? "" : "s"} · ${sharedCr} cr counted once</span></h4>` +
+        `<p class="help">These count toward both majors. URI generally caps how many credits may be shared between majors — see the rules below. Credits are only counted once toward your total.</p>` +
+        sharedList +
+      `</div>` +
+
+      `<div class="dm-obligations">` +
+        `<h4>⚠ A second major does <u>not</u> waive these Music requirements</h4>` +
+        `<ul>${DOUBLE_MAJOR.musicObligations.map((o) => `<li>${escapeHtml(o)}</li>`).join("")}</ul>` +
+      `</div>` +
+
+      `<div class="dm-rules">` +
+        `<h4>Rules to know <span class="help">(always confirm with your advisor)</span></h4>` +
+        `<ul class="dm-rule-list">` +
+        DOUBLE_MAJOR.rules.map((r) =>
+          `<li>${statusBadge(r.status)} <span class="dm-rule-text">${escapeHtml(r.text)}</span>` +
+          (r.source ? ` <a class="dm-src" href="${escapeHtml(r.source)}" target="_blank" rel="noopener">source ↗</a>` : "") +
+          `</li>`).join("") +
+        `</ul>` +
+      `</div>` +
+
+      `<p class="dm-disclaimer">This overview is a planning aid, not an official degree audit. Double-major and dual-degree rules depend on your catalog year, college, and the specific program pairing. Confirm everything with advisors for <strong>both</strong> programs and Enrollment Services.</p>`;
+  }
+
+  function dmAuditCard(a) {
+    const done = a.needed > 0 && a.have >= a.needed;
+    const pct = a.needed ? Math.round((a.have / a.needed) * 100) : 0;
+    return `<div class="dm-card">
+      <h4>${escapeHtml(a.name)}</h4>
+      <div class="dm-bar"><span style="width:${Math.min(100, pct)}%"></span></div>
+      <p class="dm-card-stat">${a.have}/${a.needed} required course slots placed · ${a.credits} cr degree${done ? " · ✓ all required courses placed" : ""}</p>
+    </div>`;
+  }
+
   // ---- Pickers -----------------------------------------------------------
   let pickerMode = null; // "add" | "swap"
   let pickerTerm = null;
@@ -1145,12 +1263,29 @@
       const o = document.createElement("option");
       o.value = key; o.textContent = DEGREES[key].name;
       el.degree.appendChild(o);
+      if (el.degree2) {
+        const o2 = document.createElement("option");
+        o2.value = key; o2.textContent = DEGREES[key].name;
+        el.degree2.appendChild(o2);
+      }
     });
     TERMS.forEach((t) => {
       const o = document.createElement("option");
       o.value = t.id; o.textContent = t.label;
       el.start.appendChild(o);
     });
+  }
+
+  // Keep the second-major dropdown in sync: hide the primary degree from it
+  // (can't double-major in the same program) and show/hide it with the toggle.
+  function refreshSecondMajorUI() {
+    if (!el.degree2 || !el.doubleToggle) return;
+    const on = el.doubleToggle.checked;
+    el.degree2.classList.toggle("hidden", !on);
+    // disable the currently-selected primary as a second-major option
+    [...el.degree2.options].forEach((o) => { o.disabled = (o.value && o.value === state.degree); });
+    if (!on) { if (state.degree2) { state.degree2 = ""; el.degree2.value = ""; } }
+    else { el.degree2.value = state.degree2 || ""; }
   }
 
   function reflowToStart() {
@@ -1168,6 +1303,9 @@
     el.degree.addEventListener("change", () => {
       const changed = state.degree !== el.degree.value;
       state.degree = el.degree.value;
+      // if the new primary equals the second major, clear the second.
+      if (state.degree2 === state.degree) state.degree2 = "";
+      refreshSecondMajorUI();
       if (changed && DEGREES[state.degree]) {
         autoFill(); // fresh recommended sequence
       } else {
@@ -1178,6 +1316,14 @@
       state.startTerm = el.start.value;
       if (DEGREES[state.degree]) autoFill(); // re-lay the sequence from the new start
       else render();
+    });
+    if (el.doubleToggle) el.doubleToggle.addEventListener("change", () => {
+      refreshSecondMajorUI();
+      render();
+    });
+    if (el.degree2) el.degree2.addEventListener("change", () => {
+      state.degree2 = el.degree2.value;
+      render();
     });
     el.tentative.addEventListener("change", () => { state.showTentative = el.tentative.checked; save(); });
     el.availOnly.addEventListener("change", () => { state.availOnly = el.availOnly.checked; save(); });
@@ -1290,6 +1436,8 @@
     el.start.value = state.startTerm || TERM_IDS[1];
     el.tentative.checked = state.showTentative;
     el.availOnly.checked = state.availOnly;
+    if (el.doubleToggle) el.doubleToggle.checked = !!state.degree2;
+    refreshSecondMajorUI();
     if (DEGREES[state.degree]) reflowToStart();
     render();
     setupBannerMascot();

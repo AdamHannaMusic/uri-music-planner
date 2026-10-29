@@ -852,5 +852,61 @@ const USAGE_LOG = {
   enabled: false,      // flip on only after the above are filled in + code is wired
 };
 
+/*
+ * DOUBLE MAJOR / DUAL DEGREE RULES
+ * -----------------------------------------------------------------------
+ * Grounded in URI's University Manual (Ch. 8), the A&S / Registration & Records
+ * guidance, and the Music Department's requirements (reviewed Oct 28, 2026).
+ *
+ * Each rule carries a STATUS the UI shows honestly:
+ *   CONFIRMED                 supported by current URI sources
+ *   ADVISOR_REVIEW_REQUIRED   must be verified for the student's catalog year /
+ *                             college / program pairing before relying on it
+ *
+ * Two things are deliberately NOT hard-coded as universal rules (shown as
+ * ADVISOR_REVIEW_REQUIRED): the 12-credit course-overlap cap (applicability
+ * is catalog-year / college / pairing dependent) and the number of physical
+ * diplomas (two official URI pages differ). The software never auto-rejects a
+ * combination; it flags for advisor review.
+ */
+const DOUBLE_MAJOR = {
+  // How we classify a pairing from the two degrees' award type (B.A. vs B.M.).
+  //   same award  -> DOUBLE_MAJOR (one degree, two majors)
+  //   different    -> DUAL_DEGREE  (two degrees)
+  classify: {
+    DOUBLE_MAJOR: {
+      label: "Double major (one bachelor's degree, two majors)",
+      blurb: "Both majors lead to the same type of degree. You complete all requirements for both; your record shows both majors.",
+    },
+    DUAL_DEGREE: {
+      label: "Dual degree (two bachelor's degrees)",
+      blurb: "The two programs award different degrees (e.g. B.A. + B.M.). You complete both programs; the University awards both degrees. Plan for extra time — don't assume four years.",
+    },
+  },
+  rules: [
+    { id: "1.1", status: "CONFIRMED", text: "Both majors keep their own requirements — a second major does not replace the first. Each is audited independently.", source: "https://web.uri.edu/manual/chapter-8/" },
+    { id: "2.2", status: "CONFIRMED", text: "General Education is completed once for a double major, even though it may appear under both majors in an audit.", source: "https://web.uri.edu/registration-records/" },
+    { id: "2.3", status: "CONFIRMED", text: "A course's credits count once toward the total, even when it satisfies more than one requirement. A double major does not mean 240 credits — you still meet the applicable degree's minimum (usually 120+).", source: "https://web.uri.edu/manual/chapter-8/" },
+    { id: "2.4", status: "CONFIRMED", text: "Minimum 2.00 cumulative GPA to graduate; individual programs/options may require higher. Option coursework needs a 2.00 in that option.", source: "https://web.uri.edu/manual/chapter-8/" },
+    { id: "2.5", status: "CONFIRMED", text: "Residency: at least ¼ of graduation credits earned at URI, and at least half of each major's required credits at URI (approved exceptions aside).", source: "https://web.uri.edu/manual/chapter-8/" },
+    { id: "2.6", status: "CONFIRMED", text: "Requirements follow your catalog year. Don't mix requirements across catalog years without an authorized change.", source: "https://web.uri.edu/catalog/" },
+    { id: "2.7", status: "CONFIRMED", text: "Meet with advisors for BOTH programs — each may have its own admission, progression, and graduation conditions.", source: "https://web.uri.edu/advising/" },
+    { id: "3.2", status: "ADVISOR_REVIEW_REQUIRED", text: "A&S has published a limit of up to 12 approved credits shared between two separate majors. Whether it applies to YOUR catalog year, college, and pairing must be confirmed — it is not enforced here automatically.", source: "https://web.uri.edu/artsci/" },
+    { id: "1.4", status: "ADVISOR_REVIEW_REQUIRED", text: "Number of physical diplomas for a double major is unsettled — two official URI pages differ. Confirm with Enrollment Services.", source: "https://web.uri.edu/registration-records/" },
+    { id: "4.1", status: "CONFIRMED", text: "Adding Music as a second major does NOT waive the audition in your principal performing area, nor the theory placement exam.", source: "https://web.uri.edu/music/" },
+    { id: "5.8/6.4", status: "CONFIRMED", text: "A second major does NOT waive Music's applied lessons, ensemble semesters, Music Convocation (MUS 300), recitals, or portfolios/capstones — including zero-credit requirements.", source: "https://web.uri.edu/music/" },
+    { id: "6.5", status: "CONFIRMED", text: "B.M. Music Therapy is a 139-credit, five-year program — not an ordinary 120-credit, four-year degree. Plan accordingly when combining it with another major.", source: "https://web.uri.edu/music/" },
+    { id: "7.2", status: "ADVISOR_REVIEW_REQUIRED", text: "Music + Business does not automatically use the College of Business two-BSBA-major rules. The actual pairing, college rules, and permitted sharing must be verified.", source: "https://web.uri.edu/business/" },
+  ],
+  // Shown prominently regardless of pairing — the non-waivable Music obligations.
+  musicObligations: [
+    "Applied music lessons (every required semester)",
+    "Ensemble participation (every required semester)",
+    "Music Convocation — MUS 300 (every required semester, even at 0 credits)",
+    "Required recitals (e.g. junior/senior)",
+    "Portfolio / capstone components (e.g. MUS 280 / MUS 480)",
+  ],
+};
+
 // Expose to the app
-window.PLANNER_DATA = { TERMS, TERM_IDS, COURSES, DEGREES, UPPER_DIVISION, MAJOR_ENSEMBLES, RESOLUTIONS, LINKS, USAGE_LOG };
+window.PLANNER_DATA = { TERMS, TERM_IDS, COURSES, DEGREES, UPPER_DIVISION, MAJOR_ENSEMBLES, RESOLUTIONS, LINKS, USAGE_LOG, DOUBLE_MAJOR };

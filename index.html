@@ -43,6 +43,13 @@
           <option value="">Choose your program…</option>
         </select>
         <p id="degree-help" class="help">Loads that worksheet's required courses.</p>
+        <label class="check check-inline">
+          <input type="checkbox" id="toggle-double" />
+          I&rsquo;m pursuing a double major / dual degree
+        </label>
+        <select id="degree2-select" class="hidden" aria-label="Second major">
+          <option value="">Choose your second major…</option>
+        </select>
       </div>
 
       <div class="field">
@@ -118,6 +125,11 @@
             University Catalog.
           </p>
         </section>
+
+        <!-- Double-major / dual-degree panel (shown only when a second major
+             is chosen). Audits each major separately, highlights shared
+             courses, and lists the URI rules with honest status tags. -->
+        <section id="double-major" class="double-major hidden" aria-label="Double major overview"></section>
       </section>
     </div>
   </main>
