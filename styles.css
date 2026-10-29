@@ -844,6 +844,16 @@ select.gened-list { font-size: 0.82rem; }
 .dm-src { font-size: 0.72rem; color: var(--uri-blue); white-space: nowrap; }
 .dm-disclaimer { margin: 10px 0 0; font-size: 0.74rem; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 10px; }
 
+/* Courtesy-preview banner for a non-Music second major. */
+.dm-courtesy {
+  background: #fff3d6; border: 1px solid #e6c975; color: #6b4e00;
+  border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; font-size: 0.84rem; line-height: 1.45;
+}
+.dm-courtesy-link { margin-top: 8px; }
+.dm-courtesy-link a { color: #8a5a00; font-weight: 700; }
+.dm-card-ext { background: #f3f4f6; border-style: dashed; }
+.dm-card-ext .dm-card-stat { font-style: italic; }
+
 @media print { .double-major { break-inside: avoid; } }
 
 /* ---- Optional welcome email splash --------------------------------------- */

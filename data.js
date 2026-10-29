@@ -863,6 +863,63 @@ const USAGE_LOG = {
 };
 
 /*
+ * EXTERNAL PROGRAMS — every other URI undergraduate major, as a COURTESY.
+ * -----------------------------------------------------------------------
+ * These let a Music student preview "what might a double major with X look
+ * like?" for any URI program. IMPORTANT: the planner does NOT audit any
+ * program outside Music. For an external program we show only its name,
+ * degree type, and a link to the official URI page — never a requirement
+ * audit or shared-course math (we don't have, and won't guess, their
+ * requirements). The UI shows a prominent courtesy disclaimer.
+ *
+ * Source: URI "Undergraduate Majors" (uri.edu/programs/undergraduate-majors).
+ * Each `link` is a scoped search so it keeps working across catalog years /
+ * URL changes. To correct a name or degree, edit one line here.
+ */
+function _uriProgramSearch(name) {
+  return "https://www.google.com/search?q=" + encodeURIComponent("URI " + name + " major requirements site:uri.edu");
+}
+const EXTERNAL_PROGRAMS = [
+  // name, degree. (Music's own degrees live in DEGREES and are audited; they
+  // are intentionally NOT repeated here.)
+  ["Accounting", "B.S."], ["Africana Studies", "B.A."], ["Animal & Veterinary Science", "B.S."],
+  ["Anthropology", "B.A."], ["Aquaculture & Fisheries Science", "B.S."], ["Art (Studio)", "B.F.A."],
+  ["Art History", "B.A."], ["Biological Sciences", "B.S."], ["Biology", "B.A."],
+  ["Biomedical Engineering", "B.S."], ["Biotechnology", "B.S."],
+  ["Business Analytics & Artificial Intelligence", "B.S."], ["Business Studies", "B.A."],
+  ["Cell & Molecular Biology", "B.S."], ["Chemical Engineering", "B.S."], ["Chemistry", "B.A."],
+  ["Chinese", "B.A."], ["Civil Engineering", "B.S."], ["Communication Studies", "B.A."],
+  ["Communicative Disorders", "B.S."], ["Computer Engineering", "B.S."], ["Computer Science", "B.A."],
+  ["Criminology & Criminal Justice", "B.A."], ["Data Science", "B.A."], ["Dietetics", "B.S."],
+  ["Early Childhood Education", "B.S."], ["Economics", "B.A."], ["Electrical Engineering", "B.S."],
+  ["Elementary Education", "B.A."], ["English", "B.A."],
+  ["Environmental & Natural Resource Economics", "B.S."], ["Environmental Science & Management", "B.S."],
+  ["Environmental Engineering", "B.S."], ["Film Media", "B.A."], ["French", "B.A."],
+  ["Geology & Geological Oceanography", "B.S."], ["German", "B.A."],
+  ["Global Language & Area Studies", "B.A."], ["Health & Physical Education", "B.S."],
+  ["History", "B.A."], ["Human Development & Family Science", "B.S."],
+  ["Industrial & Systems Engineering", "B.S."], ["Interdisciplinary Neuroscience", "B.S."],
+  ["Interdisciplinary Studies", "B.A."], ["Italian", "B.A."], ["Journalism", "B.A."],
+  ["Kinesiology", "B.S."], ["Landscape Architecture", "B.L.A."], ["Marine Affairs", "B.A."],
+  ["Marine Biology", "B.S."], ["Mathematics", "B.A."], ["Mechanical Engineering", "B.S."],
+  ["Medical Laboratory Science", "B.S."], ["Nursing", "B.S."], ["Nutrition", "B.S."],
+  ["Ocean Engineering", "B.S."], ["Pharmaceutical Sciences", "B.S."], ["Philosophy", "B.A."],
+  ["Physics", "B.S."], ["Physics & Physical Oceanography", "B.S."], ["Plant Sciences", "B.S."],
+  ["Political Science", "B.A."], ["Professional & Public Writing", "B.A."], ["Psychology", "B.A."],
+  ["Public Health", "B.S."], ["Public Relations", "B.A."], ["Secondary Education", "B.A."],
+  ["Sociology", "B.A."], ["Spanish", "B.A."], ["Sports Media & Communication", "B.A."],
+  ["Strategic Communication", "B.A."], ["Sustainable Food Systems", "B.S."],
+  ["Textile Marketing", "B.S."], ["Textiles, Fashion Merchandising & Design", "B.S."],
+  ["Theatre", "B.A."], ["Wildlife & Conservation Biology", "B.S."],
+].map(([name, degree]) => ({
+  key: "ext:" + name.toLowerCase().replace(/[^a-z0-9]+/g, "_"),
+  name: name + " (" + degree + ")",
+  award: /^B\.A\./.test(degree) ? "BA" : /^B\.M\./.test(degree) ? "BM" : "OTHER",
+  external: true,
+  link: _uriProgramSearch(name),
+}));
+
+/*
  * DOUBLE MAJOR / DUAL DEGREE RULES
  * -----------------------------------------------------------------------
  * Grounded in URI's University Manual (Ch. 8), the A&S / Registration & Records
@@ -919,4 +976,4 @@ const DOUBLE_MAJOR = {
 };
 
 // Expose to the app
-window.PLANNER_DATA = { TERMS, TERM_IDS, COURSES, DEGREES, UPPER_DIVISION, MAJOR_ENSEMBLES, RESOLUTIONS, LINKS, USAGE_LOG, DOUBLE_MAJOR };
+window.PLANNER_DATA = { TERMS, TERM_IDS, COURSES, DEGREES, UPPER_DIVISION, MAJOR_ENSEMBLES, RESOLUTIONS, LINKS, USAGE_LOG, DOUBLE_MAJOR, EXTERNAL_PROGRAMS };

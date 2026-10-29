@@ -7,6 +7,9 @@
   const RESOLUTIONS = window.PLANNER_DATA.RESOLUTIONS || {};
   const LINKS = window.PLANNER_DATA.LINKS || { forms: [] };
   const DOUBLE_MAJOR = window.PLANNER_DATA.DOUBLE_MAJOR || { classify: {}, rules: [], musicObligations: [] };
+  const EXTERNAL_PROGRAMS = window.PLANNER_DATA.EXTERNAL_PROGRAMS || [];
+  const EXTERNAL_BY_KEY = {};
+  EXTERNAL_PROGRAMS.forEach((p) => { EXTERNAL_BY_KEY[p.key] = p; });
   const USAGE_LOG = window.PLANNER_DATA.USAGE_LOG || { enabled: false };
   const EMAIL_KEY = "uri-music-email";
   const SPLASH_SEEN_KEY = "uri-music-splash-seen";
@@ -296,9 +299,11 @@
   function payloadToPlan(p) {
     if (!p || typeof p !== "object" || !Array.isArray(p.e)) throw new Error("This code is missing its plan data.");
     if (p.d && !DEGREES[p.d]) throw new Error("This code is for a program this planner doesn't recognize.");
-    if (p.d2 && !DEGREES[p.d2]) throw new Error("This code is for a program this planner doesn't recognize.");
+    // d2 may be a Music degree OR an external-program key ("ext:...").
+    const d2ok = !p.d2 || DEGREES[p.d2] || (typeof p.d2 === "string" && p.d2.indexOf("ext:") === 0);
+    if (!d2ok) throw new Error("This code is for a program this planner doesn't recognize.");
     state.degree = p.d || "";
-    state.degree2 = p.d2 || "";   // optional second major (older codes omit it)
+    state.degree2 = p.d2 || "";   // optional second major (Music degree or ext: program)
     state.startTerm = TERM_IDS[p.s] !== undefined ? TERM_IDS[p.s] : (p.s || TERM_IDS[1]);
     state.extraTerms = p.x || 0;
     let n = 0;
@@ -882,7 +887,13 @@
     const panel = el.doublePanel;
     if (!panel) return;
     const d1 = state.degree, d2 = state.degree2;
-    if (!d1 || !d2 || !DEGREES[d1] || !DEGREES[d2]) { panel.classList.add("hidden"); panel.innerHTML = ""; return; }
+    if (!d1 || !DEGREES[d1] || !d2) { panel.classList.add("hidden"); panel.innerHTML = ""; return; }
+
+    // Second major may be another Music degree (audited) OR an external URI
+    // program (courtesy preview — not audited).
+    const ext = EXTERNAL_BY_KEY[d2];
+    if (ext) { renderExternalDoubleMajor(d1, ext); return; }
+    if (!DEGREES[d2]) { panel.classList.add("hidden"); panel.innerHTML = ""; return; }
     panel.classList.remove("hidden");
 
     const a1 = auditDegree(d1), a2 = auditDegree(d2);
@@ -931,6 +942,59 @@
       `</div>` +
 
       `<p class="dm-disclaimer">This overview is a planning aid, not an official degree audit. Double-major and dual-degree rules depend on your catalog year, college, and the specific program pairing. Confirm everything with advisors for <strong>both</strong> programs and Enrollment Services.</p>`;
+  }
+
+  // External (non-Music) second major: courtesy preview only. We audit the
+  // Music side, but for the other program we show just its name + catalog link
+  // and a prominent "not audited — verify with that department" disclaimer.
+  function renderExternalDoubleMajor(d1, ext) {
+    const panel = el.doublePanel;
+    panel.classList.remove("hidden");
+    const a1 = auditDegree(d1);
+    const award1 = awardType(d1);
+    const kind = (award1 === ext.award) ? "DOUBLE_MAJOR" : "DUAL_DEGREE";
+    const cls = DOUBLE_MAJOR.classify[kind] || {};
+    const statusBadge = (st) => st === "CONFIRMED"
+      ? `<span class="dm-status confirmed">Confirmed</span>`
+      : `<span class="dm-status review">Advisor review</span>`;
+
+    panel.innerHTML =
+      `<h3 class="dm-title">Double major overview</h3>` +
+
+      `<div class="dm-courtesy">` +
+        `<strong>⚠ Courtesy preview — not an audit.</strong> This planner only audits <strong>Music</strong> programs. ` +
+        `<strong>${escapeHtml(ext.name)}</strong> belongs to another department, so we can&rsquo;t check its requirements, credits, or how courses overlap. ` +
+        `This view is only to help you <em>picture</em> what pairing Music with ${escapeHtml(ext.name)} might involve. ` +
+        `You must verify everything with that program&rsquo;s department and your advisor.` +
+        `<div class="dm-courtesy-link"><a href="${escapeHtml(ext.link)}" target="_blank" rel="noopener">Look up ${escapeHtml(ext.name)} requirements on URI&rsquo;s site ↗</a></div>` +
+      `</div>` +
+
+      `<div class="dm-kind"><strong>${escapeHtml(cls.label || kind)}</strong><p class="help">${escapeHtml(cls.blurb || "")}</p></div>` +
+
+      `<div class="dm-audits">` +
+        dmAuditCard(a1) +
+        `<div class="dm-card dm-card-ext">
+          <h4>${escapeHtml(ext.name)}</h4>
+          <p class="dm-card-stat">Not audited here. Requirements, credits, and overlap for this program must come from its department / the URI catalog.</p>
+        </div>` +
+      `</div>` +
+
+      `<div class="dm-obligations">` +
+        `<h4>⚠ Adding a second major does <u>not</u> waive these Music requirements</h4>` +
+        `<ul>${DOUBLE_MAJOR.musicObligations.map((o) => `<li>${escapeHtml(o)}</li>`).join("")}</ul>` +
+      `</div>` +
+
+      `<div class="dm-rules">` +
+        `<h4>Rules to know <span class="help">(always confirm with your advisor)</span></h4>` +
+        `<ul class="dm-rule-list">` +
+        DOUBLE_MAJOR.rules.map((r) =>
+          `<li>${statusBadge(r.status)} <span class="dm-rule-text">${escapeHtml(r.text)}</span>` +
+          (r.source ? ` <a class="dm-src" href="${escapeHtml(r.source)}" target="_blank" rel="noopener">source ↗</a>` : "") +
+          `</li>`).join("") +
+        `</ul>` +
+      `</div>` +
+
+      `<p class="dm-disclaimer">Courtesy preview only — not an official degree audit, and the Music Department does not audit programs outside Music. Confirm all requirements and overlap rules with the ${escapeHtml(ext.name)} department, your advisors, and Enrollment Services.</p>`;
   }
 
   function dmAuditCard(a) {
@@ -1263,16 +1327,34 @@
 
   // ---- Controls ----------------------------------------------------------
   function populateSelectors() {
+    // Primary degree picker: Music programs only (those we audit).
     Object.keys(DEGREES).forEach((key) => {
       const o = document.createElement("option");
       o.value = key; o.textContent = DEGREES[key].name;
       el.degree.appendChild(o);
-      if (el.degree2) {
-        const o2 = document.createElement("option");
-        o2.value = key; o2.textContent = DEGREES[key].name;
-        el.degree2.appendChild(o2);
-      }
     });
+    // Second-major picker: Music programs (audited) + a courtesy group of every
+    // other URI major (name + link only; not audited).
+    if (el.degree2) {
+      const gMusic = document.createElement("optgroup");
+      gMusic.label = "Music programs (fully audited)";
+      Object.keys(DEGREES).forEach((key) => {
+        const o = document.createElement("option");
+        o.value = key; o.textContent = DEGREES[key].name;
+        gMusic.appendChild(o);
+      });
+      el.degree2.appendChild(gMusic);
+      if (EXTERNAL_PROGRAMS.length) {
+        const gExt = document.createElement("optgroup");
+        gExt.label = "Other URI majors (courtesy preview — not audited)";
+        EXTERNAL_PROGRAMS.forEach((p) => {
+          const o = document.createElement("option");
+          o.value = p.key; o.textContent = p.name;
+          gExt.appendChild(o);
+        });
+        el.degree2.appendChild(gExt);
+      }
+    }
     TERMS.forEach((t) => {
       const o = document.createElement("option");
       o.value = t.id; o.textContent = t.label;
