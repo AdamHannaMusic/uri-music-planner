@@ -845,3 +845,28 @@ select.gened-list { font-size: 0.82rem; }
 .dm-disclaimer { margin: 10px 0 0; font-size: 0.74rem; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 10px; }
 
 @media print { .double-major { break-inside: avoid; } }
+
+/* ---- Optional welcome email splash --------------------------------------- */
+.splash-backdrop {
+  position: fixed; inset: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+  background: rgba(10, 32, 64, 0.55); backdrop-filter: blur(2px);
+}
+.splash-card {
+  background: #fff; border-radius: 16px; max-width: 430px; width: 100%;
+  padding: 24px 26px 22px; text-align: center; box-shadow: 0 20px 60px rgba(0,20,50,0.4);
+}
+.splash-mascot img { display: block; margin: 0 auto 6px; }
+.splash-card h2 { margin: 0 0 6px; color: var(--uri-blue); font-size: 1.25rem; }
+.splash-sub { margin: 0 0 16px; font-size: 0.86rem; color: var(--muted); }
+.splash-form { text-align: left; }
+.splash-label { display: block; font-size: 0.78rem; font-weight: 700; margin-bottom: 4px; }
+.splash-form input { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; font-size: 0.95rem; box-sizing: border-box; }
+.splash-error { color: var(--accent); font-size: 0.78rem; margin: 6px 0 0; }
+.splash-actions { display: flex; gap: 10px; margin: 14px 0 10px; flex-wrap: wrap; }
+.splash-actions .btn { flex: 1; min-width: 130px; }
+.splash-privacy { margin: 0; font-size: 0.7rem; color: var(--muted); line-height: 1.4; }
+@media print { .splash-backdrop { display: none !important; } }
+
+/* email-my-code button (it's an <a> styled as a button) */
+#code-email { text-decoration: none; display: inline-flex; align-items: center; }

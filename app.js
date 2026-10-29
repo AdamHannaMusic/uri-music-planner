@@ -7,6 +7,9 @@
   const RESOLUTIONS = window.PLANNER_DATA.RESOLUTIONS || {};
   const LINKS = window.PLANNER_DATA.LINKS || { forms: [] };
   const DOUBLE_MAJOR = window.PLANNER_DATA.DOUBLE_MAJOR || { classify: {}, rules: [], musicObligations: [] };
+  const USAGE_LOG = window.PLANNER_DATA.USAGE_LOG || { enabled: false };
+  const EMAIL_KEY = "uri-music-email";
+  const SPLASH_SEEN_KEY = "uri-music-splash-seen";
   // Read fresh each call: the live rotation sheet may have replaced this list.
   function majorEnsembles() { return window.PLANNER_DATA.MAJOR_ENSEMBLES || []; }
   function isMajorEnsembleSlot(label) { return !!label && /major\s+ensemble/i.test(label); }
@@ -1201,9 +1204,10 @@
       `<div class="code-actions">` +
       `<button class="btn" id="code-copy">Copy code</button>` +
       `<button class="btn ghost" id="code-download">Download as file</button>` +
+      `<a class="btn ghost" id="code-email" href="${emailCodeLink(code)}">📧 Email my code</a>` +
       `<span id="code-copied" class="code-copied hidden">Copied ✓</span>` +
       `</div>` +
-      `<p class="help" style="margin-top:10px">Tip: the code is long because it holds your whole plan. Copying or downloading it is easier than typing.</p>`;
+      `<p class="help" style="margin-top:10px">Tip: the code is long because it holds your whole plan. Copying, downloading, or emailing it to yourself is easier than typing.</p>`;
 
     el.codeBody.querySelector("#code-copy").addEventListener("click", async () => {
       const ta = el.codeBody.querySelector("#code-out");
@@ -1410,6 +1414,70 @@
     }
   }
 
+  // ---- Optional welcome splash + usage log -------------------------------
+  // Never a gate: "Skip" always proceeds, and the planner is fully usable
+  // whether or not an email is given. If an email is entered we remember it
+  // (to offer "email my code" later) and, when configured, log it to a Google
+  // Form so an advisor can see who's using the tool.
+  function validEmail(s) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((s || "").trim()); }
+  function savedEmail() { try { return localStorage.getItem(EMAIL_KEY) || ""; } catch (e) { return ""; } }
+
+  // Fire-and-forget POST to a Google Form, if one is configured in data.js.
+  // no-cors means we can't read the response — we just need the row logged.
+  function logUsage(email) {
+    try {
+      if (!USAGE_LOG.googleFormUrl || !USAGE_LOG.emailField) return;
+      const body = new URLSearchParams();
+      body.append(USAGE_LOG.emailField, email);
+      fetch(USAGE_LOG.googleFormUrl, { method: "POST", mode: "no-cors", body }).catch(() => {});
+    } catch (e) { /* logging must never break the student */ }
+  }
+
+  function setupSplash() {
+    const backdrop = document.getElementById("splash-backdrop");
+    if (!backdrop) return;
+    const seen = (() => { try { return localStorage.getItem(SPLASH_SEEN_KEY); } catch (e) { return null; } })();
+    const returning = !!(state.degree && state.entries && state.entries.length);
+    // Don't show it to returning students or if they've already seen/dismissed it.
+    if (USAGE_LOG.enabled === false || seen || returning) return;
+
+    const form = document.getElementById("splash-form");
+    const input = document.getElementById("splash-email");
+    const errEl = document.getElementById("splash-error");
+    const skip = document.getElementById("splash-skip");
+    function dismiss() { backdrop.classList.add("hidden"); try { localStorage.setItem(SPLASH_SEEN_KEY, "1"); } catch (e) {} }
+
+    backdrop.classList.remove("hidden");
+    setTimeout(() => input && input.focus(), 60);
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const email = input.value.trim();
+      if (!email) { dismiss(); return; }               // empty = treat like skip
+      if (!validEmail(email)) { errEl.classList.remove("hidden"); input.focus(); return; }
+      errEl.classList.add("hidden");
+      try { localStorage.setItem(EMAIL_KEY, email); } catch (e2) {}
+      logUsage(email);
+      dismiss();
+    });
+    skip.addEventListener("click", dismiss);
+  }
+
+  // Build a mailto: link so a student can email themselves their code with no
+  // backend. Works everywhere; the device's mail app handles the send.
+  function emailCodeLink(code) {
+    const to = savedEmail();
+    const subject = "My URI Music plan code";
+    const degName = (DEGREES[state.degree] && DEGREES[state.degree].name) || "my plan";
+    const body =
+      "Here's my saved URI Music course plan code for " + degName + ".\n\n" +
+      "To reopen it, go to the planner, click \"Load a code,\" and paste this in:\n\n" +
+      code + "\n\n(Keep this email so you can pick up where you left off.)";
+    return "mailto:" + encodeURIComponent(to) +
+      "?subject=" + encodeURIComponent(subject) +
+      "&body=" + encodeURIComponent(body);
+  }
+
   async function init() {
     load();
     // Wait for the live sheet to load (or fail) before building the UI, so the
@@ -1443,6 +1511,7 @@
     setupBannerMascot();
     updateBannerBest();   // show the persistent Baton Swat high score, if any
     renderFormsRepo();    // forms & official links at the bottom
+    setupSplash();        // optional, non-blocking welcome email splash
     // The help assistant is a self-contained module (site/help/). Start it if present.
     if (typeof window.initHelpAssistant === "function") window.initHelpAssistant();
   }

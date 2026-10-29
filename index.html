@@ -176,6 +176,32 @@
     </p>
   </footer>
 
+  <!-- OPTIONAL welcome splash: never blocks the planner. Lets a student drop
+       their email so they can be reminded of (and emailed) their save code,
+       and so an advisor can optionally see who's using the tool. "Skip" keeps
+       them moving. Shown once per browser. -->
+  <div id="splash-backdrop" class="splash-backdrop hidden" role="dialog" aria-modal="false" aria-labelledby="splash-title">
+    <div class="splash-card">
+      <div class="splash-mascot" aria-hidden="true">
+        <img src="help/maestro-rhody-default-static.png" alt="" width="110" height="110"
+             onerror="this.style.display='none'" />
+      </div>
+      <h2 id="splash-title">Welcome to Maestro Rhody</h2>
+      <p class="splash-sub">The URI Music course-sequence planner. Want your save code emailed to you so you can pick up where you left off? Enter your email &mdash; or skip and start planning right away.</p>
+      <form id="splash-form" class="splash-form" novalidate>
+        <label for="splash-email" class="splash-label">Email (optional)</label>
+        <input id="splash-email" type="email" inputmode="email" autocomplete="email"
+               placeholder="you@uri.edu" />
+        <p id="splash-error" class="splash-error hidden">That doesn&rsquo;t look like a valid email &mdash; check it, or just skip.</p>
+        <div class="splash-actions">
+          <button type="submit" class="btn" id="splash-continue">Continue</button>
+          <button type="button" class="btn ghost" id="splash-skip">Skip &mdash; just let me plan</button>
+        </div>
+        <p class="splash-privacy">Optional. If you enter it, we remember your email on this device and can email you your save code. It&rsquo;s never required to use the planner. This is a planning aid, not official advising.</p>
+      </form>
+    </div>
+  </div>
+
 
 
   <!-- Maestro Rhody: advising chat that points to official URI pages. Starts

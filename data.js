@@ -835,21 +835,31 @@ const LINKS = {
 };
 
 /*
- * USAGE LOG / EMAIL CODE — PLACEHOLDER FOR A FUTURE FEATURE (not used yet).
+ * USAGE LOG / EMAIL CODE
  * -----------------------------------------------------------------------
- * The tool currently opens straight to the planner with no email prompt.
- * When you're ready to add "enter your email to get your code" plus an
- * advisor usage log, create a Google Form (one short-answer "email" question,
- * optionally a "code" question), paste its details here, and wire it up.
- * A static site can't send email or write to a database on its own, so a
- * Google Form (free) is the simplest way to log emails into a Sheet an
- * advisor can read. Nothing in the app reads this object today.
+ * The planner shows an OPTIONAL welcome splash ("enter your email to get your
+ * save code emailed, or skip"). It never blocks the planner. Entering an email
+ * lets the student email themselves their code (via their mail app) and — IF a
+ * Google Form is configured below — logs the email so an advisor can see who's
+ * using the tool.
+ *
+ * TO TURN ON THE CENTRAL ADVISOR LOG (free, ~15 min):
+ *   1. Create a Google Form with ONE short-answer question titled "Email".
+ *   2. Click the form's ⋮ menu → "Get pre-filled link", type anything in the
+ *      Email box, Get link, and copy it. In that link you'll see
+ *      "entry.1234567=..." — the number is your emailField id.
+ *   3. Take the form's normal share/edit URL ".../viewform" and change the end
+ *      to ".../formResponse" — that's the googleFormUrl.
+ *   4. Paste both below. Responses land in the form's linked Google Sheet,
+ *      which only you/advisors can open. (See DEPLOY.md for screenshots.)
+ *
+ * enabled:true shows the splash even with no form configured (email-to-self
+ * still works; it just won't log centrally until you add the form).
  */
 const USAGE_LOG = {
-  googleFormUrl: "",   // the form's /formResponse POST URL
-  emailField: "",      // entry.* id for the email question
-  codeField: "",       // entry.* id for the save-code question (optional)
-  enabled: false,      // flip on only after the above are filled in + code is wired
+  googleFormUrl: "",   // e.g. "https://docs.google.com/forms/d/e/XXXX/formResponse"
+  emailField: "",      // e.g. "entry.1234567"
+  enabled: true,       // show the optional splash
 };
 
 /*
